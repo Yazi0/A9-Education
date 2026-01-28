@@ -33,7 +33,7 @@ class User(AbstractUser):
             dist = self.district[:3].upper() if self.district else "GEN"
             grade = self.current_grade if self.current_grade else "G-XX"
             rand = random.randint(1000, 9999)
-            self.student_id = f"STU-{dist}-{grade}-S{rand}"
+            self.student_id = f"STU/{dist}/{grade}/S{rand}"
         super().save(*args, **kwargs)
 
     def __str__(self):

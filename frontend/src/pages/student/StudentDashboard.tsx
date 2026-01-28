@@ -52,31 +52,31 @@ const StudentDashboard = () => {
       label: "Active Subjects",
       value: activeSubjectsCount.toString(),
       color: "bg-red-50",
-      change: "+2",
+      change: "0",
       trend: "up"
     },
     {
       icon: <Video className="text-green-600" size={24} />,
       label: "Completed Lessons",
-      value: "24",
+      value: "0",
       color: "bg-green-50",
-      change: "+8",
+      change: "0",
       trend: "up"
     },
     {
       icon: <Award className="text-amber-600" size={24} />,
       label: "Achievements",
-      value: "12",
+      value: "0",
       color: "bg-amber-50",
-      change: "+3",
+      change: "0",
       trend: "up"
     },
     {
       icon: <Clock className="text-purple-600" size={24} />,
       label: "Study Hours",
-      value: "42",
+      value: "0",
       color: "bg-purple-50",
-      change: "+15",
+      change: "0",
       trend: "up"
     },
   ];
@@ -105,12 +105,7 @@ const StudentDashboard = () => {
     },
   ];
 
-  const recentActivity = [
-    { action: "Completed Math Assignment", time: "2 hours ago", icon: "📝", color: "bg-red-100" },
-    { action: "Joined Science Live Class", time: "Yesterday", icon: "🎥", color: "bg-green-100" },
-    { action: "Earned 'Quick Learner' Badge", time: "2 days ago", icon: "🏆", color: "bg-amber-100" },
-    { action: "Submitted English Essay", time: "3 days ago", icon: "✏️", color: "bg-blue-100" },
-  ];
+  const recentActivity: any[] = [];
 
   const sliderContent = [
     {
@@ -151,12 +146,7 @@ const StudentDashboard = () => {
     setActiveSlide((prev) => (prev - 1 + sliderContent.length) % sliderContent.length);
   };
 
-  const learningGoals = [
-    { goal: "Complete Math Chapter 5", progress: 75, color: "bg-red-500" },
-    { goal: "Science Project Submission", progress: 40, color: "bg-green-500" },
-    { goal: "English Vocabulary Mastery", progress: 60, color: "bg-amber-500" },
-    { goal: "Computer Lab Practice", progress: 90, color: "bg-blue-500" },
-  ];
+  const learningGoals: any[] = [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col">

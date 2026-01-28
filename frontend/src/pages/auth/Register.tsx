@@ -4,7 +4,7 @@ import {
   Eye, EyeOff, CheckCircle, User, Mail, Phone, MapPin,
   Lock, GraduationCap, Shield, Hash, Download,
   ChevronRight, Star, BookOpen, Sparkles, Award, Rocket,
-  X, Copy, Check, QrCode, CreditCard, Save, RefreshCw
+  X, Copy, Check, QrCode, CreditCard, Save
 } from "lucide-react";
 import ThemeImg from "../../assets/image/Theme.png";
 import api from "../../api/axios";
@@ -33,7 +33,7 @@ const Register = ({ onClose }: Props) => {
   const [address, setAddress] = useState("");
   const [district, setDistrict] = useState("");
   const [grade, setGrade] = useState("G-8");
-  // const [username, setUsername] = useState(""); // Removed manual username
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [generatedStudentId, setGeneratedStudentId] = useState("");
@@ -49,16 +49,12 @@ const Register = ({ onClose }: Props) => {
   ];
 
   // Generate student ID whenever district or grade changes
-  const generateNewId = () => {
+  useEffect(() => {
     if (district && grade) {
-      const studentId = `STU-${district}-${grade}-S${randomNum}`;
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      const studentId = `STU/${district}/${grade}/S${randomNum}`;
       setGeneratedStudentId(studentId);
     }
-  };
-
-  // Generate student ID whenever district or grade changes
-  useEffect(() => {
-    generateNewId();
   }, [district, grade]);
 
   const validateForm = () => {
@@ -73,10 +69,8 @@ const Register = ({ onClose }: Props) => {
     if (!grade) errors.push("Grade is required");
 
     // Username and password validations
-    // Username validation removed as we use generatedStudentId
-    // if (!username.trim()) errors.push("Username is required");
-    // if (username.length < 4) errors.push("Username must be at least 4 characters");
-    if (!generatedStudentId) errors.push("Student ID generation failed. Please re-select Grade/District.");
+    if (!username.trim()) errors.push("Username is required");
+    if (username.length < 4) errors.push("Username must be at least 4 characters");
     if (password.length < 6) errors.push("Password must be at least 6 characters");
     if (password !== confirmPassword) errors.push("Passwords do not match");
 
@@ -92,11 +86,11 @@ const Register = ({ onClose }: Props) => {
 
     try {
       const response = await api.post("users/register/", {
-        username: generatedStudentId,
+        username,
         password,
         email,
         role: "student",
-        name,
+        name: name,
         phone,
         address,
         district,
@@ -120,24 +114,12 @@ const Register = ({ onClose }: Props) => {
       setRegistrationDate(dateStr);
       setGeneratedStudentId(newUser.student_id);
 
-      localStorage.setItem("lastRegisteredUser", JSON.stringify(newUser));
 
       // Show registration popup
       setShowRegistrationPopup(true);
     } catch (error: any) {
       console.error("Registration error:", error);
-      let msg = "Registration failed. Please try again.";
-
-      if (error.response?.data) {
-        if (error.response.data.username) {
-          msg = "Student ID already exists. Please click the refresh icon next to the Username to generate a new one.";
-        } else {
-          const errors = Object.entries(error.response.data)
-            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
-            .join("\n");
-          if (errors) msg = errors;
-        }
-      }
+      const msg = error.response?.data?.username ? "Username already exists" : "Registration failed. Please try again.";
       alert(msg);
     }
   };
@@ -489,22 +471,18 @@ const Register = ({ onClose }: Props) => {
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <User className="w-4 h-4" />
-                    Username (Your Student ID)
+                    Username *
                   </label>
-                  <div className="flex gap-2">
-                    <div className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl text-gray-700 font-mono font-bold flex items-center">
-                      {generatedStudentId}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={generateNewId}
-                      className="p-3 border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-600 transition-colors"
-                      title="Regenerate ID"
-                    >
-                      <RefreshCw className="w-5 h-5" />
-                    </button>
+                  <input
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                    placeholder="Choose a unique username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${username.length >= 4 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <span className="text-xs text-gray-500">Minimum 4 characters</span>
                   </div>
-                  <p className="text-xs text-gray-500">This will be your username for logging in.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -601,7 +579,7 @@ const Register = ({ onClose }: Props) => {
             {/* Close Button */}
             <button
               onClick={closeRegistrationPopup}
-              className="absolute top-4 right-4 z-50 p-2 bg-red-100/80 hover:bg-red-200 text-red-600 rounded-full transition-colors shadow-lg backdrop-blur-sm"
+              className="absolute top-4 right-4 z-10 p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full transition-colors shadow-lg"
             >
               <X className="w-5 h-5" />
             </button>
@@ -738,7 +716,7 @@ const Register = ({ onClose }: Props) => {
 
                     <div className="bg-white/70 p-4 rounded-xl border border-green-100">
                       <p className="text-xs text-gray-500 mb-1">Username</p>
-                      <p className="font-semibold text-gray-900">{generatedStudentId}</p>
+                      <p className="font-semibold text-gray-900">{username}</p>
                     </div>
 
                     <div className="bg-white/70 p-4 rounded-xl border border-green-100">
@@ -771,7 +749,7 @@ const Register = ({ onClose }: Props) => {
                         <User className="w-6 h-6 text-blue-600" />
                       </div>
                       <h4 className="font-bold text-gray-900 mb-1">Username/Password</h4>
-                      <p className="text-sm text-gray-600">Use: <span className="font-mono font-semibold">{generatedStudentId}</span></p>
+                      <p className="text-sm text-gray-600">Use: <span className="font-mono font-semibold">{username}</span></p>
                     </div>
 
                     <div className="text-center p-4 bg-white/70 rounded-xl border border-amber-100">

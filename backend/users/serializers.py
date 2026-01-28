@@ -19,15 +19,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'password', 'email', 'role', 'name', 
-            'phone', 'address', 'district', 'current_grade',
-            'student_id'
+            'phone', 'address', 'district', 'current_grade'
         ]
-        read_only_fields = ['student_id']
 
     def create(self, validated_data):
-        # For students, ensure student_id matches the username (which is the generated ID from frontend)
-        if validated_data.get('role') == 'student':
-            validated_data['student_id'] = validated_data.get('username')
-            
         user = User.objects.create_user(**validated_data)
         return user

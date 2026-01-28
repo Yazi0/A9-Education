@@ -23,6 +23,32 @@ class UserRegistrationView(generics.CreateAPIView):
     permission_classes = []
 
 
+from rest_framework_simplejwt.tokens import RefreshToken
+
+# This is QRLoginView
+class QRLoginView(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        student_id = request.data.get('student_id')
+        if not student_id:
+            return Response({'error': 'Student ID is required'}, status=400)
+        
+        try:
+            user = User.objects.get(student_id=student_id, role='student')
+            if not user.is_active:
+                return Response({'error': 'User account is disabled'}, status=403)
+                
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': UserSerializer(user).data
+            })
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid Student ID'}, status=404)
+
+
 # This is TeacherDashboardView
 class TeacherDashboardView(APIView):
     permission_classes = [IsAuthenticated]

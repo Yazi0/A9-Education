@@ -198,11 +198,7 @@ const TeacherDashboard = () => {
   ];
 
   // Recent activities
-  const activities = [
-    { id: 1, title: "Uploaded Chemistry Video", time: "2 hours ago" },
-    { id: 2, title: "Added Math Course", time: "1 day ago" },
-    { id: 3, title: "Shared Physics Notes", time: "2 days ago" }
-  ];
+  const activities: any[] = [];
 
   // Loading state
   if (loading) {
@@ -218,7 +214,7 @@ const TeacherDashboard = () => {
   }
 
   // Error state
-  if (error && !teacher.name.includes("Sunil")) { // Don't show error if we have demo data
+  if (error) { // Don't show error if we have demo data
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">

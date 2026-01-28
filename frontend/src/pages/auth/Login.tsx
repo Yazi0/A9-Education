@@ -8,15 +8,6 @@ import Register from "./Register";
 import api from "../../api/axios";
 
 // API service (assuming you have an api.ts file)
-; // Adjust this import based on your project structure
-
-interface RegisteredUser {
-  username: string;
-  password: string;
-  role: "student" | "teacher";
-  name: string;
-  studentId?: string;
-}
 
 const Login = () => {
   const navigate = useNavigate();
@@ -38,12 +29,6 @@ const Login = () => {
   /* ================= API LOGIN FUNCTION ================= */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // For QR mode, use normal login flow
-    if (showQR) {
-      loginUser();
-      return;
-    }
 
     setError("");
     setLoading(true);
@@ -81,54 +66,12 @@ const Login = () => {
     } catch (error: any) {
       console.error("Login error:", error);
       setError("Incorrect Student ID/Username or password");
+    } finally {
       setLoading(false);
     }
   };
 
-  /* ================= NORMAL LOGIN (STUDENT ID & PASSWORD) ================= */
-  const loginUser = () => {
-    setError("");
-    setLoading(true);
-
-    setTimeout(() => {
-      const users: RegisteredUser[] = JSON.parse(
-        localStorage.getItem("registeredUsers") || "[]"
-      );
-
-      // Student login requires studentId and password
-      const student = users.find(
-        (u) => u.role === "student" &&
-          u.studentId?.toUpperCase() === studentId.toUpperCase() &&
-          u.password === password
-      );
-
-      // Teacher login still uses username
-      const teacher = users.find(
-        (u) => u.role === "teacher" &&
-          u.username === studentId && // Using studentId field for teacher username
-          u.password === password
-      );
-
-      const user = student || teacher;
-
-      if (!user) {
-        setError("Incorrect Student ID/Username or password");
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem("currentUser", JSON.stringify(user));
-      localStorage.setItem("userRole", user.role);
-
-      navigate(
-        user.role === "student"
-          ? "/studentdashboard"
-          : "/teacherdashboard"
-      );
-      setLoading(false);
-    }, 500);
-  };
-
+  /* ================= PROCESS QR RESULT ================= */
   /* ================= INITIALIZE QR SCANNER ================= */
   const initializeScanner = async () => {
     try {
@@ -193,52 +136,35 @@ const Login = () => {
   };
 
   /* ================= PROCESS QR RESULT ================= */
-  const processQRResult = (decodedText: string) => {
+  const processQRResult = async (decodedText: string) => {
     setError("");
-
-    const users: RegisteredUser[] = JSON.parse(
-      localStorage.getItem("registeredUsers") || "[]"
-    );
-
-    const scannedId = decodedText.trim().toUpperCase();
+    setLoading(true);
+    const scannedId = decodedText.trim();
     console.log("Scanned Student ID:", scannedId);
 
-    const student = users.find(
-      (u) =>
-        u.role === "student" &&
-        u.studentId?.toUpperCase() === scannedId
-    );
+    try {
+      const response = await api.post("users/qr-login/", {
+        student_id: scannedId,
+      });
 
-    if (!student) {
-      const newErrorCount = qrErrorCount + 1;
-      setQrErrorCount(newErrorCount);
+      // Store tokens
+      localStorage.setItem("access", response.data.access);
+      localStorage.setItem("refresh", response.data.refresh);
 
-      if (newErrorCount >= 3) {
-        setError("Invalid QR Code. Please use Student ID & Password login instead.");
-        setShowAlternativeOptions(true);
-      } else {
-        setError(`Invalid QR Code (Attempt ${newErrorCount}/3). Please scan a valid student ID QR code.`);
+      const user = response.data.user;
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      localStorage.setItem("userRole", user.role);
 
-        // Restart scanner after error (with delay)
-        setTimeout(() => {
-          if (showQR && !isCameraOn) {
-            initializeScanner();
-          }
-        }, 1000);
-      }
+      // Student dashboard redirect
+      navigate("/studentdashboard");
+    } catch (error: any) {
+      console.error("QR Login error:", error);
+      setError(error.response?.data?.error || "Invalid QR Code or User not found");
+      setShowAlternativeOptions(true);
       setQrResult(null);
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    // Reset error count on success
-    setQrErrorCount(0);
-
-    // Successful QR login
-    localStorage.setItem("currentUser", JSON.stringify(student));
-    localStorage.setItem("userRole", "student");
-
-    // Navigate to student dashboard
-    navigate("/studentdashboard");
   };
 
   /* ================= HANDLE QR SCAN TOGGLE ================= */
@@ -554,7 +480,7 @@ const Login = () => {
           <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsRegisterOpen(false)}
-              className="absolute top-4 right-4 z-50 p-2 bg-gray-100/50 hover:bg-gray-200 backdrop-blur-sm rounded-full transition-colors"
+              className="absolute top-4 right-4 z-10 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
             >
               <X className="w-5 h-5 text-gray-600" />
             </button>
