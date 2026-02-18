@@ -13,9 +13,17 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, onEnrollClick }) => {
   const navigate = useNavigate();
 
   const getLevelBadgeColor = (level: string) => {
-    return level === "Advanced Level" 
-      ? "bg-purple-100 text-purple-700" 
+    const isAL = level.includes("12") || level.includes("13") || level.includes("Advanced") || level.includes("A/L");
+    return isAL
+      ? "bg-purple-100 text-purple-700"
       : "bg-blue-100 text-blue-700";
+  };
+
+  const getLevelText = (level: string) => {
+    if (level.includes("12") || level.includes("13") || level.includes("Advanced") || level.includes("A/L")) {
+      return "A/L";
+    }
+    return "O/L";
   };
 
   const getStreamColor = (stream: string) => {
@@ -39,7 +47,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, onEnrollClick }) => {
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-xl font-bold text-gray-900 group-hover:text-red-600">{cls.name}</h3>
             <span className={`px-2 py-1 rounded-lg text-xs font-medium ${getLevelBadgeColor(cls.level)}`}>
-              {cls.level === "Advanced Level" ? "A/L" : "O/L"}
+              {getLevelText(cls.level)}
             </span>
           </div>
           <p className="text-sm text-gray-500">{cls.stream} Stream</p>

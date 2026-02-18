@@ -8,9 +8,10 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'role', 'name', 'phone', 
             'address', 'district', 'student_id', 'current_grade', 
-            'subject', 'grades', 'educational_qualifications', 'about', 'class_fee'
+            'subject', 'grades', 'educational_qualifications', 'about', 'class_fee',
+            'date_joined'
         ]
-        read_only_fields = ['student_id']
+        read_only_fields = ['student_id', 'date_joined']
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

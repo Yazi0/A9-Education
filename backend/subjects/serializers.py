@@ -6,4 +6,4 @@ class SubjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ['id', 'name', 'teacher', 'teacher_name']
+        fields = ['id', 'name', 'grade', 'stream', 'teacher', 'teacher_name', 'description', 'class_fee']

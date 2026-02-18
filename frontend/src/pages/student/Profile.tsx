@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import QRCode from "react-qr-code";
+import { toPng } from "html-to-image";
 import {
   User,
   Mail,
@@ -9,7 +11,6 @@ import {
   Camera,
   Save,
   ShieldCheck,
-  QrCode,
   Download,
   Copy,
   Check,
@@ -17,11 +18,13 @@ import {
   Users,
   MessageSquare
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 
 import StudentLayout from "../../layouts/StudentLayout";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>({
     studentId: "Loading...",
     name: "Loading...",
@@ -30,24 +33,29 @@ const Profile = () => {
     phone: "Loading...",
     dob: "",
     grade: "Loading...",
-    bio: "Loading..."
+    bio: "Loading...",
+    dateJoined: ""
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeClassesCount, setActiveClassesCount] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
       try {
         setLoading(true);
-        const response = await api.get("users/me/");
-        console.log("Profile Data:", response.data);
-        const data = response.data;
+        const [profileRes, enrollmentsRes] = await Promise.all([
+          api.get("users/me/"),
+          api.get("enrollments/my/")
+        ]);
 
-        // Check for various casing conventions
+        console.log("Profile Data:", profileRes.data);
+        const data = profileRes.data;
+
         setProfile({
           studentId: data.student_id || data.studentId || "N/A",
           name: data.name || data.username || "Student",
@@ -56,18 +64,20 @@ const Profile = () => {
           phone: data.phone || "Not provided",
           dob: data.dob || "2000-01-01",
           grade: data.current_grade || data.grade || "N/A",
-          bio: data.about || data.bio || "No bio available"
+          bio: data.about || data.bio || "No bio available",
+          dateJoined: data.date_joined || ""
         });
+
+        setActiveClassesCount(enrollmentsRes.data.length);
         setError(null);
       } catch (error: any) {
         console.error("Error fetching profile:", error);
         setError("Failed to load profile data. Please try again.");
-        setProfile((prev: any) => ({ ...prev, name: "Error loading profile" }));
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+    fetchProfileData();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -100,32 +110,50 @@ const Profile = () => {
   };
 
   const handleDownloadQR = () => {
-    // In a real app, this would generate and download the QR code
-    const qrData = {
-      studentId: profile.studentId,
-      name: profile.name,
-      grade: profile.grade,
-      email: profile.email
-    };
+    const cardElement = document.getElementById("StudentIDCard");
+    if (!cardElement) {
+      alert("Could not find ID card element");
+      return;
+    }
 
-    // Simulate QR code download
-    console.log("Downloading QR code for:", qrData);
-
-    // Create a dummy download link
-    const link = document.createElement('a');
-    link.href = `data:text/plain;charset=utf-8,${encodeURIComponent(JSON.stringify(qrData))}`;
-    link.download = `Student_QR_${profile.studentId}.txt`;
-    link.click();
-
-    // Show success message
-    alert(`QR code data downloaded for ${profile.name}`);
+    toPng(cardElement, {
+      cacheBust: true,
+      pixelRatio: 2, // Higher quality
+      backgroundColor: '#ffffff'
+    })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `A9_Student_ID_${profile.studentId}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.error('Error generating ID card image:', err);
+        alert("Failed to generate ID card image");
+      });
   };
 
   const stats = [
-    { label: "Attendance", value: "94%", icon: "📊" },
-    { label: "Avg. Score", value: "88%", icon: "⭐" },
-    { label: "Classes", value: "3", icon: "📚" },
-    { label: "Registration", value: "Active", icon: "✅" },
+    {
+      label: "Enrolled",
+      value: activeClassesCount.toString(),
+      icon: "📚"
+    },
+    {
+      label: "Joined",
+      value: profile.dateJoined ? new Date(profile.dateJoined).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "N/A",
+      icon: "📅"
+    },
+    {
+      label: "Status",
+      value: "Active",
+      icon: "✅"
+    },
+    {
+      label: "Verification",
+      value: "Verified",
+      icon: "🛡️"
+    },
   ];
 
   return (
@@ -204,7 +232,7 @@ const Profile = () => {
                         <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
                         <div className="flex items-center mt-1">
                           <ShieldCheck className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-sm font-medium text-gray-600">Verified Student</span>
+                          <span className="text-sm font-medium text-gray-600">Registered {profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Student'}</span>
                         </div>
                       </div>
                       <span className="px-4 py-1.5 bg-gradient-to-r from-red-100 to-red-50 text-red-700 rounded-full text-sm font-semibold">
@@ -231,10 +259,10 @@ const Profile = () => {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                       {stats.map((stat, index) => (
-                        <div key={index} className="bg-gray-50 rounded-xl p-4 text-center">
-                          <div className="text-2xl mb-1">{stat.icon}</div>
-                          <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                          <p className="text-sm text-gray-500">{stat.label}</p>
+                        <div key={index} className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                          <div className="text-xl mb-1">{stat.icon}</div>
+                          <p className="text-lg font-bold text-gray-900 truncate w-full">{stat.value}</p>
+                          <p className="text-xs font-medium text-gray-500 mt-1">{stat.label}</p>
                         </div>
                       ))}
                     </div>
@@ -368,47 +396,110 @@ const Profile = () => {
 
               {/* Right Column - QR Code Only */}
               <div className="space-y-6">
-                {/* QR Code Card */}
-                <div className="bg-white rounded-2xl shadow-xl p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-gray-900 flex items-center">
-                      <QrCode className="mr-2 text-red-600" />
-                      Student QR Code
-                    </h3>
-                    <span className="text-sm text-gray-500">ID: {profile.studentId}</span>
-                  </div>
+                {/* ID Card Style QR Section */}
+                <div className="space-y-6">
+                  {/* Virtual Student ID Card */}
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-red-900 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                    <div
+                      className="relative bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col w-[320px] mx-auto"
+                    >
+                      <div id="StudentIDCard" className="bg-white">
+                        {/* University Style ID Header */}
+                        <div className="bg-red-700 px-5 py-2 text-white flex justify-between items-center relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                          <div className="relative z-10 flex items-center gap-2">
+                            <div className="w-6 h-6 bg-white rounded flex items-center justify-center font-black text-[10px] text-red-700 shadow-md">A9</div>
+                            <div>
+                              <h3 className="text-[11px] font-black tracking-widest uppercase leading-none">A9 Academy</h3>
+                              <p className="text-[5px] text-red-100 font-bold tracking-[0.1em] mt-0.5">UNIVERSITY DIVISION</p>
+                            </div>
+                          </div>
+                          <div className="relative z-10 text-right">
+                            <div className="text-[6px] font-black text-white/90 tracking-tighter uppercase leading-none">Official ID</div>
+                            <div className="h-0.5 w-6 bg-white/60 ml-auto mt-1 rounded-full"></div>
+                          </div>
+                        </div>
 
-                  {/* QR Code Display Area */}
-                  <div className="bg-gray-50 rounded-xl p-8 flex flex-col items-center justify-center mb-6">
-                    <div className="relative">
-                      {/* Placeholder QR Code - In real app, this would be generated */}
-                      <div className="w-48 h-48 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-gray-300">
-                        <QrCode className="w-16 h-16 text-gray-400 mb-4" />
-                        <div className="text-center">
-                          <p className="text-sm font-semibold text-gray-600">{profile.name}</p>
-                          <p className="text-xs text-gray-500 mt-1">Grade {profile.grade}</p>
+                        {/* ID Card Body */}
+                        <div className="p-3 bg-white relative overflow-hidden">
+                          {/* Pattern Overlay */}
+                          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#b91c1c 0.5px, transparent 0.5px)', backgroundSize: '10px 10px' }}></div>
+
+                          <div className="relative z-10">
+                            {/* Full Width Top Section for Name */}
+                            <div className="mb-2 text-center border-b border-gray-100 pb-2">
+                              <p className="text-[5px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">REGISTRATION IDENTITY</p>
+                              <h4 className="text-[13px] font-black text-gray-900 leading-none uppercase tracking-tight">
+                                {profile.name}
+                              </h4>
+                            </div>
+
+                            <div className="flex gap-3 items-center">
+                              {/* Left Side: Photo wrapper */}
+                              <div className="flex flex-col items-center">
+                                <div className="w-14 h-14 bg-gray-50 rounded-lg border-[1.5px] border-red-100 shadow-sm flex items-center justify-center overflow-hidden mb-1 relative">
+                                  <User className="w-7 h-7 text-red-200" />
+                                  <div className="absolute inset-0 border-[2.5px] border-white rounded-lg"></div>
+                                </div>
+                                <div className="px-1.5 py-0.5 bg-red-600 rounded text-[5px] font-extrabold text-white uppercase tracking-wider">
+                                  ACTIVE
+                                </div>
+                              </div>
+
+                              {/* Center: Details */}
+                              <div className="flex-1 flex flex-col justify-center min-w-0 px-1">
+                                <div className="mb-2">
+                                  <p className="text-[5px] font-bold text-gray-400 uppercase leading-none mb-1">Registry No</p>
+                                  <p className="text-[10px] font-black text-red-700 font-mono italic tracking-tighter whitespace-nowrap">{profile.studentId}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[5px] font-bold text-gray-400 uppercase leading-none mb-1">Grade Level</p>
+                                  <p className="text-[10px] font-black text-gray-800 uppercase leading-none">L-{profile.grade}</p>
+                                </div>
+                              </div>
+
+                              {/* Right Side: QR Code */}
+                              <div className="flex flex-col items-center justify-center pl-2 border-l border-red-50">
+                                <div className="p-1 bg-white border border-red-100 rounded-lg shadow-sm">
+                                  <QRCode
+                                    id="StudentQRCode"
+                                    value={profile.studentId}
+                                    size={48}
+                                    level="M"
+                                    fgColor="#b91c1c"
+                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                  />
+                                </div>
+                                <p className="text-[5px] text-red-800 font-black mt-1.5 tracking-[0.2em] leading-none opacity-60">SCAN</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ID Card Bottom */}
+                        <div className="bg-red-700 py-1.5 px-4 flex justify-between items-center">
+                          <div className="text-[5px] text-red-100 font-bold tracking-[0.2em]">VALID UNTIL DEC 2026</div>
+                          <div className="flex gap-1">
+                            <div className="w-1 h-1 bg-red-400 rounded-full animate-pulse"></div>
+                            <div className="w-1 h-1 bg-red-400 rounded-full opacity-60"></div>
+                            <div className="w-1 h-1 bg-red-400 rounded-full opacity-30"></div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Student ID in QR Code */}
-                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full shadow-md">
-                        <span className="text-xs font-bold text-red-600">{profile.studentId}</span>
+                      {/* ID Card Footer Action */}
+                      <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 mt-auto">
+                        <button
+                          onClick={handleDownloadQR}
+                          className="w-full py-3 bg-white border border-gray-200 hover:border-red-600 hover:text-red-600 text-gray-700 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
+                        >
+                          <Download size={14} />
+                          Download University ID
+                        </button>
                       </div>
                     </div>
-
-                    <p className="text-sm text-gray-500 mt-6 text-center">
-                      Scan this QR code to verify student identity and access information
-                    </p>
                   </div>
-
-                  {/* Download Button */}
-                  <button
-                    onClick={handleDownloadQR}
-                    className="w-full py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-3 mb-4"
-                  >
-                    <Download size={20} />
-                    Download QR Code
-                  </button>
 
                   {/* QR Code Info */}
                   <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-xl">
@@ -438,21 +529,30 @@ const Profile = () => {
                 <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl shadow-xl p-6 text-white">
                   <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
                   <div className="space-y-3">
-                    <button className="w-full flex items-center justify-between p-3 bg-red-700 hover:bg-red-800 rounded-lg transition-colors">
+                    <button
+                      onClick={() => navigate("/student/my-subjects")}
+                      className="w-full flex items-center justify-between p-3 bg-red-700 hover:bg-red-800 rounded-lg transition-colors"
+                    >
                       <div className="flex items-center">
                         <BookOpen className="w-5 h-5 mr-3" />
                         <span>View Classes</span>
                       </div>
                       <span>→</span>
                     </button>
-                    <button className="w-full flex items-center justify-between p-3 bg-red-700 hover:bg-red-800 rounded-lg transition-colors">
+                    <button
+                      onClick={() => navigate("/Subjects")}
+                      className="w-full flex items-center justify-between p-3 bg-red-700 hover:bg-red-800 rounded-lg transition-colors"
+                    >
                       <div className="flex items-center">
                         <Users className="w-5 h-5 mr-3" />
-                        <span>Contact Teacher</span>
+                        <span>Browse All Subjects</span>
                       </div>
                       <span>→</span>
                     </button>
-                    <button className="w-full flex items-center justify-between p-3 bg-red-700 hover:bg-red-800 rounded-lg transition-colors">
+                    <button
+                      onClick={() => window.location.href = "mailto:support@a9education.com"}
+                      className="w-full flex items-center justify-between p-3 bg-red-700 hover:bg-red-800 rounded-lg transition-colors"
+                    >
                       <div className="flex items-center">
                         <MessageSquare className="w-5 h-5 mr-3" />
                         <span>Support Center</span>

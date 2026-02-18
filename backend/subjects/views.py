@@ -4,9 +4,14 @@ from .models import Subject
 from .serializers import SubjectSerializer
 
 class SubjectListView(ListAPIView):
-    queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'student' and user.current_grade:
+            return Subject.objects.filter(grade=user.current_grade)
+        return Subject.objects.all()
 
 
 class TeacherSubjectListView(ListAPIView):
