@@ -34,8 +34,12 @@ const Profile = () => {
     dob: "",
     grade: "Loading...",
     bio: "Loading...",
-    dateJoined: ""
+    dateJoined: "",
+    image: null as string | null
   });
+
+  const [uploadImage, setUploadImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -65,8 +69,13 @@ const Profile = () => {
           dob: data.dob || "2000-01-01",
           grade: data.current_grade || data.grade || "N/A",
           bio: data.about || data.bio || "No bio available",
-          dateJoined: data.date_joined || ""
+          dateJoined: data.date_joined || "",
+          image: data.profile_image ? (data.profile_image.startsWith('http') ? data.profile_image : `http://localhost:8000${data.profile_image}`) : null
         });
+
+        if (data.profile_image) {
+          setImagePreview(data.profile_image.startsWith('http') ? data.profile_image : `http://localhost:8000${data.profile_image}`);
+        }
 
         setActiveClassesCount(enrollmentsRes.data.length);
         setError(null);
@@ -84,17 +93,40 @@ const Profile = () => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveProfile = async () => {
     try {
-      await api.patch("users/me/", {
-        name: profile.name,
-        address: profile.address,
-        email: profile.email,
-        phone: profile.phone,
-        current_grade: profile.grade,
-        about: profile.bio
+      const formData = new FormData();
+      formData.append("name", profile.name);
+      formData.append("address", profile.address);
+      formData.append("email", profile.email);
+      formData.append("phone", profile.phone);
+      formData.append("current_grade", profile.grade);
+      formData.append("about", profile.bio);
+
+      if (uploadImage) {
+        formData.append("profile_image", uploadImage);
+      }
+
+      await api.patch("users/me/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
+
       setIsEditing(false);
+      setUploadImage(null);
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -214,12 +246,17 @@ const Profile = () => {
                     <div className="absolute -bottom-16 left-8">
                       <div className="relative">
                         <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden shadow-lg">
-                          <User className="w-16 h-16 text-gray-400" />
+                          {imagePreview ? (
+                            <img src={imagePreview} className="w-full h-full object-cover" alt="Profile" />
+                          ) : (
+                            <User className="w-16 h-16 text-gray-400" />
+                          )}
                         </div>
                         {isEditing && (
-                          <button className="absolute bottom-2 right-2 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white shadow-lg">
+                          <label className="absolute bottom-2 right-2 w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer transition-all hover:scale-110 active:scale-95">
                             <Camera size={18} />
-                          </button>
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                          </label>
                         )}
                       </div>
                     </div>
@@ -409,10 +446,11 @@ const Profile = () => {
                         <div className="bg-red-700 px-5 py-2 text-white flex justify-between items-center relative overflow-hidden">
                           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
                           <div className="relative z-10 flex items-center gap-2">
-                            <div className="w-6 h-6 bg-white rounded flex items-center justify-center font-black text-[10px] text-red-700 shadow-md">A9</div>
+                            <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm overflow-hidden">
+                              <img src="/icon.png" className="w-full h-full object-contain" alt="A9" />
+                            </div>
                             <div>
-                              <h3 className="text-[11px] font-black tracking-widest uppercase leading-none">A9 Academy</h3>
-                              <p className="text-[5px] text-red-100 font-bold tracking-[0.1em] mt-0.5">UNIVERSITY DIVISION</p>
+                              <h3 className="text-[14px] font-black tracking-widest uppercase leading-none">Academy</h3>
                             </div>
                           </div>
                           <div className="relative z-10 text-right">
@@ -439,7 +477,11 @@ const Profile = () => {
                               {/* Left Side: Photo wrapper */}
                               <div className="flex flex-col items-center">
                                 <div className="w-14 h-14 bg-gray-50 rounded-lg border-[1.5px] border-red-100 shadow-sm flex items-center justify-center overflow-hidden mb-1 relative">
-                                  <User className="w-7 h-7 text-red-200" />
+                                  {imagePreview ? (
+                                    <img src={imagePreview} className="w-full h-full object-cover" alt="Pic" />
+                                  ) : (
+                                    <User className="w-7 h-7 text-red-200" />
+                                  )}
                                   <div className="absolute inset-0 border-[2.5px] border-white rounded-lg"></div>
                                 </div>
                                 <div className="px-1.5 py-0.5 bg-red-600 rounded text-[5px] font-extrabold text-white uppercase tracking-wider">

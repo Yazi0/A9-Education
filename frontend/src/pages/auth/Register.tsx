@@ -13,10 +13,6 @@ interface Props {
   onClose: () => void;
 }
 
-interface Props {
-  onClose: () => void;
-}
-
 const Register = ({ onClose }: Props) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -123,8 +119,24 @@ const Register = ({ onClose }: Props) => {
       setShowRegistrationPopup(true);
     } catch (error: any) {
       console.error("Registration error:", error);
-      const msg = error.response?.data?.username ? "Username already exists" : "Registration failed. Please try again.";
-      alert(msg);
+      const errorData = error.response?.data;
+      let errorMsg = "Registration failed. ";
+
+      if (errorData) {
+        if (typeof errorData === 'object') {
+          // Extract specific field errors
+          const details = Object.entries(errorData)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join('\n');
+          errorMsg += details;
+        } else {
+          errorMsg += errorData.toString();
+        }
+      } else {
+        errorMsg += "Please check your network or try again.";
+      }
+
+      alert(errorMsg);
     }
   };
 
@@ -147,7 +159,179 @@ const Register = ({ onClose }: Props) => {
   };
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white relative">
+      {/* REGISTRATION SUCCESS POPUP - Fully Matched with Profile UI */}
+      {showRegistrationPopup && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[140] p-2 animate-fade-in">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[98vh] flex flex-col">
+            {/* Close Button */}
+            <button
+              onClick={closeRegistrationPopup}
+              className="absolute top-2.5 right-2.5 z-[110] p-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-full transition-colors shadow-lg"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Popup Header - Extra Compact */}
+            <div className="bg-gradient-to-br from-red-600 to-red-700 p-3.5 text-center shrink-0">
+              <h2 className="text-lg font-black text-white leading-tight">
+                Welcome to A9 Academy! 🎉
+              </h2>
+              <p className="text-red-100 text-[10px] font-bold opacity-80 uppercase tracking-widest mt-0.5">
+                Reg Successful • Account Active
+              </p>
+            </div>
+
+            {/* Popup Content - Fully visible */}
+            <div className="p-3 md:p-4 overflow-y-auto no-scrollbar">
+              <div className="space-y-3">
+                {/* ID Card Display Section - EXACT MATCH WITH PROFILE */}
+                <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-2xl border border-dashed border-gray-200 shrink-0 overflow-hidden">
+                  <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col w-[320px] mx-auto">
+                    <div id="StudentIDCardExport" className="bg-white">
+                      {/* University Style ID Header */}
+                      <div className="bg-red-700 px-5 py-2 text-white flex justify-between items-center relative overflow-hidden shrink-0">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                        <div className="relative z-10 flex items-center gap-2">
+                          <div className="w-7 h-7 bg-white rounded-md flex items-center justify-center p-0.5 shadow-sm overflow-hidden">
+                            <img src="/icon.png" className="w-full h-full object-contain" alt="A9" />
+                          </div>
+                          <div>
+                            <h3 className="text-[14px] font-black tracking-widest uppercase leading-none">Academy</h3>
+                          </div>
+                        </div>
+                        <div className="relative z-10 text-right">
+                          <div className="text-[6px] font-black text-white/90 tracking-tighter uppercase leading-none">Official ID</div>
+                          <div className="h-0.5 w-6 bg-white/60 ml-auto mt-1 rounded-full"></div>
+                        </div>
+                      </div>
+
+                      {/* ID Card Body */}
+                      <div className="p-3 bg-white relative overflow-hidden">
+                        {/* Pattern Overlay */}
+                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#b91c1c 0.5px, transparent 0.5px)', backgroundSize: '10px 10px' }}></div>
+
+                        <div className="relative z-10">
+                          {/* Full Width Top Section for Name */}
+                          <div className="mb-2 text-center border-b border-gray-100 pb-2">
+                            <p className="text-[5px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">REGISTRATION IDENTITY</p>
+                            <h4 className="text-[13px] font-black text-gray-900 leading-none uppercase tracking-tight">
+                              {String(name || "Student")}
+                            </h4>
+                          </div>
+
+                          <div className="flex gap-3 items-center">
+                            {/* Left Side: Photo wrapper */}
+                            <div className="flex flex-col items-center">
+                              <div className="w-14 h-14 bg-gray-50 rounded-lg border-[1.5px] border-red-100 shadow-sm flex items-center justify-center overflow-hidden mb-1 relative">
+                                {imagePreview ? (
+                                  <img src={imagePreview} className="w-full h-full object-cover" alt="Pic" />
+                                ) : (
+                                  <User className="w-7 h-7 text-red-100" />
+                                )}
+                                <div className="absolute inset-0 border-[2.5px] border-white rounded-lg"></div>
+                              </div>
+                              <div className="px-1.5 py-0.5 bg-red-600 rounded text-[5px] font-extrabold text-white uppercase tracking-wider">
+                                ACTIVE
+                              </div>
+                            </div>
+
+                            {/* Center: Details */}
+                            <div className="flex-1 flex flex-col justify-center min-w-0 px-1">
+                              <div className="mb-2">
+                                <p className="text-[5px] font-bold text-gray-400 uppercase leading-none mb-1">Registry No</p>
+                                <p className="text-[10px] font-black text-red-700 font-mono italic tracking-tighter whitespace-nowrap">{String(generatedStudentId || "PENDING")}</p>
+                              </div>
+                              <div>
+                                <p className="text-[5px] font-bold text-gray-400 uppercase leading-none mb-1">Grade Level</p>
+                                <p className="text-[10px] font-black text-gray-800 uppercase leading-none">L-{String(grade || "N/A")}</p>
+                              </div>
+                            </div>
+
+                            {/* Right Side: QR Code */}
+                            <div className="flex flex-col items-center justify-center pl-2 border-l border-red-50">
+                              <div className="p-1 bg-white border border-red-100 rounded-lg shadow-sm">
+                                <QRCode
+                                  value={String(generatedStudentId || "N/A")}
+                                  size={48}
+                                  level="M"
+                                  fgColor="#b91c1c"
+                                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                />
+                              </div>
+                              <p className="text-[5px] text-red-800 font-black mt-1.5 tracking-[0.2em] leading-none opacity-60 uppercase">Scan</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ID Card Bottom */}
+                      <div className="bg-red-700 py-1.5 px-4 flex justify-between items-center shrink-0">
+                        <div className="text-[5px] text-red-100 font-bold tracking-[0.2em]">VALID UNTIL DEC 2026</div>
+                        <div className="flex gap-1">
+                          <div className="w-1 h-1 bg-red-400 rounded-full animate-pulse"></div>
+                          <div className="w-1 h-1 bg-red-400 rounded-full opacity-60"></div>
+                          <div className="w-1 h-1 bg-red-400 rounded-full opacity-30"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-center text-gray-400 mt-2 max-w-xs font-semibold uppercase tracking-tighter">
+                  Official Identity Card Generated
+                </p>
+              </div>
+
+              {/* Details and Actions - Compact */}
+              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div className="bg-blue-50/50 p-2 rounded-xl border border-blue-100">
+                  <p className="text-blue-800 font-bold mb-0.5 uppercase tracking-wider">Credentials</p>
+                  <p className="text-blue-600 flex justify-between font-medium">User: <span className="font-bold text-blue-900">{String(username || "")}</span></p>
+                  <p className="text-blue-600 flex justify-between font-medium pt-0.5">ID: <span className="font-bold text-blue-900">{String(generatedStudentId || "").split('/').pop()}</span></p>
+                </div>
+                <div className="bg-amber-50/50 p-2 rounded-xl border border-amber-100 flex flex-col justify-center">
+                  <p className="text-amber-800 font-bold mb-0.5 uppercase tracking-wider">Important</p>
+                  <p className="text-amber-600 leading-tight">Download your ID for campus verification.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1 border-t border-gray-100 shrink-0">
+                <button
+                  onClick={() => {
+                    const card = document.getElementById("StudentIDCardExport");
+                    if (card) {
+                      import("html-to-image").then(m => {
+                        m.toPng(card, {
+                          cacheBust: true,
+                          pixelRatio: 4, // Ultra-high quality
+                          backgroundColor: '#ffffff'
+                        }).then(dataUrl => {
+                          const link = document.createElement('a');
+                          link.download = `A9_ID_${String(name || "Student").replace(/\s+/g, '_')}.png`;
+                          link.href = dataUrl;
+                          link.click();
+                        });
+                      }).catch(err => console.error("Export error:", err));
+                    }
+                  }}
+                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-[11px] hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                >
+                  <Download className="w-3 h-3" />
+                  Download ID
+                </button>
+                <button
+                  onClick={closeRegistrationPopup}
+                  className="flex-1 py-2 bg-red-600 text-white rounded-xl font-bold text-[11px] hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-md"
+                >
+                  <Rocket className="w-3 h-3" />
+                  Complete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* HEADER WITH DECORATIVE ELEMENTS */}
       <div className="relative bg-gradient-to-br from-red-500 via-red-600 to-red-700 overflow-hidden rounded-t-2xl">
         {/* Decorative Elements */}
@@ -516,162 +700,17 @@ const Register = ({ onClose }: Props) => {
         </div>
       </div>
 
-      {/* REGISTRATION SUCCESS POPUP */}
-      {showRegistrationPopup && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
-            {/* Close Button */}
-            <button
-              onClick={closeRegistrationPopup}
-              className="absolute top-4 right-4 z-[60] p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-full transition-colors shadow-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Popup Header */}
-            <div className="bg-gradient-to-br from-red-600 to-red-700 p-6 text-center">
-              <h2 className="text-2xl font-bold text-white mb-1">
-                Registration Successful! 🎉
-              </h2>
-              <p className="text-red-100 text-sm">
-                Your Academic Account is now Active
-              </p>
-            </div>
-
-            {/* Popup Content */}
-            <div className="p-6">
-              <div className="space-y-6">
-
-                {/* ID Card Display Section */}
-                <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                  <div id="StudentIDCardPreview" className="w-[320px] bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
-                    {/* Card Header */}
-                    <div className="bg-red-700 p-3 text-white flex justify-between items-center">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-6 bg-white rounded flex items-center justify-center font-black text-[10px] text-red-700">A9</div>
-                        <span className="text-[11px] font-black uppercase tracking-wider">A9 Academy</span>
-                      </div>
-                      <span className="text-[7px] font-bold opacity-80 uppercase tracking-tighter">Student ID</span>
-                    </div>
-
-                    <div className="p-4 relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#b91c1c 0.5px, transparent 0.5px)', backgroundSize: '10px 10px' }}></div>
-                      <div className="relative z-10">
-                        {/* Name Header */}
-                        <div className="mb-3 text-center border-b border-gray-100 pb-2">
-                          <h4 className="text-[13px] font-black text-gray-900 leading-none uppercase">{name}</h4>
-                        </div>
-
-                        <div className="flex gap-4 items-center">
-                          {/* Photo */}
-                          <div className="flex flex-col items-center">
-                            <div className="w-16 h-16 bg-gray-50 rounded-lg border-2 border-red-50 flex items-center justify-center overflow-hidden mb-1">
-                              {imagePreview ? (
-                                <img src={imagePreview} className="w-full h-full object-cover" alt="Pic" />
-                              ) : (
-                                <User className="w-8 h-8 text-red-100" />
-                              )}
-                            </div>
-                            <div className="px-2 py-0.5 bg-red-600 rounded text-[5px] font-bold text-white uppercase">ACTIVE</div>
-                          </div>
-
-                          {/* Details */}
-                          <div className="flex-1 space-y-2">
-                            <div>
-                              <p className="text-[5px] text-gray-400 font-bold uppercase">Registry No</p>
-                              <p className="text-[10px] font-black text-red-700 font-mono italic">{generatedStudentId}</p>
-                            </div>
-                            <div>
-                              <p className="text-[5px] text-gray-400 font-bold uppercase">Academic Level</p>
-                              <p className="text-[10px] font-black text-gray-800 uppercase">{grade}</p>
-                            </div>
-                          </div>
-
-                          {/* QR */}
-                          <div className="pl-3 border-l border-red-50">
-                            <div className="p-1 bg-white border border-red-100 rounded-lg">
-                              <QRCode value={generatedStudentId} size={48} level="M" fgColor="#b91c1c" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-red-700 py-1.5 px-4 text-center">
-                      <span className="text-[5px] text-red-100 font-bold tracking-[0.2em]">VALID UNTIL DEC 2026</span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-center text-gray-500 mt-4 max-w-xs">
-                    Your official student ID has been generated using your uploaded photo and registered details.
-                  </p>
-                </div>
-
-                {/* Details and Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <p className="text-blue-800 font-bold mb-2">Login Credentials</p>
-                    <div className="space-y-1">
-                      <p className="text-blue-600">Username: <span className="font-mono font-bold text-blue-900">{username}</span></p>
-                      <p className="text-blue-600">Student ID: <span className="font-mono font-bold text-blue-900">{generatedStudentId}</span></p>
-                    </div>
-                  </div>
-                  <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
-                    <p className="text-amber-800 font-bold mb-2">Important</p>
-                    <p className="text-amber-600 text-xs">Download your Student ID and keep it safe. You will need it for physical verification at A9 Academy.</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => {
-                      const card = document.getElementById("StudentIDCardPreview");
-                      if (card) {
-                        import("html-to-image").then(m => {
-                          m.toPng(card, { pixelRatio: 2 }).then(dataUrl => {
-                            const link = document.createElement('a');
-                            link.download = `A9_ID_${name.replace(/\s+/g, '_')}.png`;
-                            link.href = dataUrl;
-                            link.click();
-                          });
-                        });
-                      }
-                    }}
-                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Student ID
-                  </button>
-                  <button
-                    onClick={closeRegistrationPopup}
-                    className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <Rocket className="w-4 h-4" />
-                    Complete Setup
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Add fade-in animation */}
       <style>{`
         @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-    </div>
+    </div >
   );
 };
 
