@@ -5,7 +5,6 @@ import StreamFilter from "../../components/common/StreamFilter";
 import EnrolledSubjectCard from "../../components/common/EnrolledSubjectCard";
 import PendingSubjectCard from "../../components/common/PendingSubjectCard";
 import EmptyState from "../../components/common/EmptyState";
-import Footer from "../../components/common/Footer";
 
 // Import your API instance
 import api from "../../api/axios"; // Adjust the path as needed
@@ -29,6 +28,8 @@ interface Enrollment {
   // Add other enrollment fields
 }
 
+import StudentLayout from "../../layouts/StudentLayout";
+
 const MySubjects = () => {
   const [activeTab] = useState("enrolled");
   const [streamFilter, setStreamFilter] = useState("all");
@@ -43,7 +44,7 @@ const MySubjects = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const res = await api.get("enrollments/my/");
         const enrollments: Enrollment[] = res.data;
 
@@ -104,22 +105,22 @@ const MySubjects = () => {
               },
               teacherUploads: {
                 videoLinks: [
-                  { 
-                    id: 1, 
-                    title: `${subjectData.name} - Lesson 1`, 
-                    url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA", 
+                  {
+                    id: 1,
+                    title: `${subjectData.name} - Lesson 1`,
+                    url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA",
                     duration: "45 min",
                     thumbnail: "https://img.youtube.com/vi/9Qa0J4KuGqA/maxresdefault.jpg",
                     description: `Introduction to ${subjectData.name}`
                   }
                 ],
                 notes: [
-                  { 
-                    id: 1, 
-                    title: `${subjectData.name} Complete Notes.pdf`, 
-                    type: "pdf", 
-                    size: "2.4 MB", 
-                    downloadUrl: `/downloads/${subjectData.name.toLowerCase()}.pdf` 
+                  {
+                    id: 1,
+                    title: `${subjectData.name} Complete Notes.pdf`,
+                    type: "pdf",
+                    size: "2.4 MB",
+                    downloadUrl: `/downloads/${subjectData.name.toLowerCase()}.pdf`
                   }
                 ]
               }
@@ -141,7 +142,7 @@ const MySubjects = () => {
       } catch (err: any) {
         console.error("Error fetching subjects:", err);
         setError("Failed to load subjects. Please try again later.");
-        
+
         // Fallback to mock data if API fails
         setEnrolledSubjects(getMockEnrolledSubjects());
         setPendingSubjects(getMockPendingSubjects());
@@ -179,10 +180,10 @@ const MySubjects = () => {
       },
       teacherUploads: {
         videoLinks: [
-          { 
-            id: 1, 
-            title: "Calculus - Lesson 1", 
-            url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA", 
+          {
+            id: 1,
+            title: "Calculus - Lesson 1",
+            url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA",
             duration: "45 min",
             thumbnail: "https://img.youtube.com/vi/9Qa0J4KuGqA/maxresdefault.jpg",
             description: "Introduction to differential calculus"
@@ -215,7 +216,7 @@ const MySubjects = () => {
     }
   ];
 
-  const filteredSubjects = enrolledSubjects.filter(subject => 
+  const filteredSubjects = enrolledSubjects.filter(subject =>
     streamFilter === "all" || subject.stream.toLowerCase() === streamFilter.toLowerCase()
   );
 
@@ -228,87 +229,70 @@ const MySubjects = () => {
     );
   }
 
-  if (error && enrolledSubjects.length === 0 && pendingSubjects.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col items-center justify-center">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md text-center">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-600 text-2xl">⚠️</span>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Subjects</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col">
-      {/* Header */}
-      <MySubjectsHeader enrolledCount={enrolledSubjects.length} />
+    <StudentLayout>
+      <div className="flex flex-col">
+        {/* Header */}
+        <MySubjectsHeader enrolledCount={enrolledSubjects.length} />
 
-      {/* Stream Filter */}
-      <StreamFilter 
-        streamFilter={streamFilter}
-        onStreamFilterChange={setStreamFilter}
-      />
+        {/* Stream Filter */}
+        <StreamFilter
+          streamFilter={streamFilter}
+          onStreamFilterChange={setStreamFilter}
+        />
 
-      {/* Error Alert */}
-      {error && (
-        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <span className="text-yellow-600">⚠️</span>
-            <div>
-              <p className="text-yellow-800 font-medium">Using demo data</p>
-              <p className="text-yellow-700 text-sm">{error}</p>
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-yellow-600">⚠️</span>
+              <div>
+                <p className="text-yellow-800 font-medium">Using demo data</p>
+                <p className="text-yellow-700 text-sm">{error}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Content based on active tab */}
-      {activeTab === "enrolled" && (
-        <>
-          {filteredSubjects.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredSubjects.map((subject) => (
-                <EnrolledSubjectCard key={subject.id} subject={subject} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState />
-          )}
-        </>
-      )}
+        {/* Content based on active tab */}
+        {activeTab === "enrolled" && (
+          <>
+            {filteredSubjects.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredSubjects.map((subject) => (
+                  <EnrolledSubjectCard key={subject.id} subject={subject} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState />
+            )}
+          </>
+        )}
 
-      {activeTab === "pending" && (
-        <>
-          {pendingSubjects.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {pendingSubjects.map((subject) => (
-                <PendingSubjectCard key={subject.id} subject={subject} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState 
-              title="No Pending Subjects"
-              message="You have no pending subject enrollments."
-              actionText="Explore Subjects"
-              onAction={() => window.location.href = "/subjects"}
-            />
-          )}
-        </>
-      )}
-
-      {/* Footer */}
-      <Footer />
-    </div>
+        {activeTab === "pending" && (
+          <>
+            {pendingSubjects.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {pendingSubjects.map((subject) => (
+                  <PendingSubjectCard
+                    key={subject.id}
+                    subjectId={subject.id}
+                    onEnrollSuccess={() => window.location.reload()}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No Pending Subjects"
+                message="You have no pending subject enrollments."
+                actionText="Explore Subjects"
+                onAction={() => window.location.href = "/subjects"}
+              />
+            )}
+          </>
+        )}
+      </div>
+    </StudentLayout>
   );
 };
 

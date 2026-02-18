@@ -538,30 +538,6 @@ const TeacherDashboard = () => {
           </div>
         </div>
 
-        {/* Debug info for development */}
-        {import.meta.env.DEV && (
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-            <details className="cursor-pointer">
-              <summary className="font-medium text-gray-700">Debug Information</summary>
-              <div className="mt-3 space-y-2 text-sm">
-                <div>
-                  <span className="font-medium">User Role:</span>{" "}
-                  <span className="text-indigo-600">{localStorage.getItem("userRole") || "Not set"}</span>
-                </div>
-                <div>
-                  <span className="font-medium">Token:</span>{" "}
-                  <span className="text-gray-600 truncate block">
-                    {localStorage.getItem("access") ? "✓ Present" : "✗ Missing"}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium">API Base URL:</span>{" "}
-                  <span className="text-gray-600">{import.meta.env.VITE_API_URL || "Not set"}</span>
-                </div>
-              </div>
-            </details>
-          </div>
-        )}
       </main>
     </div>
   );

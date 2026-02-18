@@ -27,7 +27,7 @@ const Summary: React.FC<SummaryProps> = ({ classes }) => {
   ];
 
   return (
-    <div className="mt-8 bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-white rounded-2xl shadow-lg p-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {summaryItems.map((item, index) => (
           <div key={index} className="text-center p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-xl">

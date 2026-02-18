@@ -1,25 +1,22 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { 
-  Video, 
-  ChevronLeft, 
-  Clock, 
-  Calendar, 
-  Play, 
-  BookOpen,
+import {
+  Video,
+  ChevronLeft,
+  Clock,
+  Play,
   Search,
   Filter,
   Download,
-  Users,
-  Share2,
   Bookmark,
   Eye,
-  Home,
-  MessageSquare,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Home
 } from "lucide-react";
-import api from "../../api/axios"; // Adjust the import path as needed
+import api from "../../api/axios";
+import StudentLayout from "../../layouts/StudentLayout";
 
 // API Interfaces
 interface ApiVideo {
@@ -45,7 +42,6 @@ interface ApiClass {
   videos: ApiVideo[];
 }
 
-// Existing interface for compatibility
 interface VideoLink {
   id: number;
   title: string;
@@ -85,22 +81,15 @@ const ClassVideos = () => {
     categories: { id: string; name: string; count: number }[];
   } | null>(null);
 
-  // Fetch class data from API
   useEffect(() => {
     const fetchClassData = async () => {
       if (!classId) return;
-
       try {
         setLoading(true);
         setError(null);
-        
-        // Fetch class details
         const classRes = await api.get<ApiClass>(`content/subjects/${classId}/classes/`);
         const apiClass = classRes.data;
-        
-        // Convert API videos to the expected format
-        const videoLinks: VideoLink[] = apiClass.videos.map((video: ApiVideo, index: number) => {
-          // Extract YouTube ID from URL if it exists
+        const videoLinks: VideoLink[] = apiClass.videos.map((video: ApiVideo) => {
           let youtubeId = "";
           if (video.youtube_video_id) {
             youtubeId = video.youtube_video_id;
@@ -108,7 +97,6 @@ const ClassVideos = () => {
             const urlParams = new URL(video.video_url).searchParams;
             youtubeId = urlParams.get('v') || "";
           }
-          
           return {
             id: video.id,
             title: video.title,
@@ -123,7 +111,6 @@ const ClassVideos = () => {
           };
         });
 
-        // Create categories from videos
         const categoryCounts: Record<string, number> = {};
         videoLinks.forEach(video => {
           categoryCounts[video.category] = (categoryCounts[video.category] || 0) + 1;
@@ -147,22 +134,17 @@ const ClassVideos = () => {
           videoLinks,
           categories
         });
-
       } catch (err: any) {
         console.error("Error fetching class data:", err);
         setError("Failed to load class videos. Please try again later.");
-        
-        // Fallback to mock data
         setClassData(getMockClassData());
       } finally {
         setLoading(false);
       }
     };
-
     fetchClassData();
   }, [classId]);
 
-  // Mock data fallback function
   const getMockClassData = () => {
     return {
       id: 1,
@@ -171,10 +153,10 @@ const ClassVideos = () => {
       level: "Advanced Level",
       teacher: "Mr. Perera",
       videoLinks: [
-        { 
-          id: 1, 
-          title: "Calculus - Lesson 1: Introduction", 
-          url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA", 
+        {
+          id: 1,
+          title: "Calculus - Lesson 1: Introduction",
+          url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA",
           duration: "45 min",
           thumbnail: "https://img.youtube.com/vi/9Qa0J4KuGqA/maxresdefault.jpg",
           description: "Introduction to differential calculus, limits, and derivatives",
@@ -183,10 +165,10 @@ const ClassVideos = () => {
           uploadDate: "2024-01-15",
           watched: 65
         },
-        { 
-          id: 2, 
-          title: "Algebra Revision - Complete Guide", 
-          url: "https://www.youtube.com/watch?v=LQN3XzD7p8A", 
+        {
+          id: 2,
+          title: "Algebra Revision - Complete Guide",
+          url: "https://www.youtube.com/watch?v=LQN3XzD7p8A",
           duration: "30 min",
           thumbnail: "https://img.youtube.com/vi/LQN3XzD7p8A/maxresdefault.jpg",
           description: "Complete algebra revision for A/L with examples",
@@ -194,33 +176,19 @@ const ClassVideos = () => {
           views: 890,
           uploadDate: "2024-01-10",
           watched: 100
-        },
-        { 
-          id: 3, 
-          title: "2023 Past Paper Discussion", 
-          url: "https://www.youtube.com/watch?v=5qap5aO4i9A", 
-          duration: "60 min",
-          thumbnail: "https://img.youtube.com/vi/5qap5aO4i9A/maxresdefault.jpg",
-          description: "Detailed discussion of 2023 past paper with solutions",
-          category: "past-papers",
-          views: 1567,
-          uploadDate: "2024-01-05",
-          watched: 45
         }
       ],
       categories: [
-        { id: "all", name: "All Videos", count: 3 },
+        { id: "all", name: "All Videos", count: 2 },
         { id: "calculus", name: "Calculus", count: 1 },
-        { id: "algebra", name: "Algebra", count: 1 },
-        { id: "past-papers", name: "Past Papers", count: 1 }
+        { id: "algebra", name: "Algebra", count: 1 }
       ]
     };
   };
 
-  // Handle video filtering
   const filteredVideos = classData?.videoLinks.filter(video => {
     const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         video.description.toLowerCase().includes(searchTerm.toLowerCase());
+      video.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || video.category === categoryFilter;
     return matchesSearch && matchesCategory;
   }) || [];
@@ -250,7 +218,6 @@ const ClassVideos = () => {
     }
   };
 
-  // Extract YouTube ID from URL
   const getYouTubeId = (url: string) => {
     try {
       const urlObj = new URL(url);
@@ -263,7 +230,7 @@ const ClassVideos = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <Loader2 className="w-12 h-12 text-red-600 animate-spin mb-4" />
         <p className="text-gray-600 text-lg">Loading class videos...</p>
       </div>
@@ -272,14 +239,14 @@ const ClassVideos = () => {
 
   if (error && !classData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center border border-red-100">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Videos</h3>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all"
+            className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-all"
           >
             Retry
           </button>
@@ -288,336 +255,202 @@ const ClassVideos = () => {
     );
   }
 
-  if (!classData) {
-    return null;
-  }
+  if (!classData) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col">
-      {/* Error Alert */}
-      {error && (
-        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="text-yellow-600" size={20} />
-            <div>
-              <p className="text-yellow-800 font-medium">Using demo data</p>
-              <p className="text-yellow-700 text-sm">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <div className="flex items-center mb-4 md:mb-0">
+    <StudentLayout>
+      <div className="max-w-6xl mx-auto flex-1 w-full">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
             <button
               onClick={handleBack}
-              className="flex items-center px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-semibold mr-4 shadow-md hover:shadow-lg transition-all"
+              className="p-2 bg-white rounded-xl shadow-sm hover:bg-gray-50 transition-all border border-gray-100"
             >
-              <ChevronLeft className="mr-2" size={18} />
-              Back to Classes
+              <ChevronLeft size={24} className="text-gray-600" />
             </button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{classData.name} Videos</h1>
-              <p className="text-gray-600 mt-2">Teacher: {classData.teacher} • {classData.level}</p>
+              <p className="text-gray-600 mt-1">Teacher: {classData.teacher} • {classData.level}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="mt-4 md:mt-0 flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm text-gray-500">Total Videos</p>
-              <p className="text-2xl font-bold text-red-700">{classData.videoLinks.length}</p>
+              <p className="text-sm text-gray-500 font-medium">Available Lessons</p>
+              <p className="text-2xl font-bold text-red-600">{classData.videoLinks.length}</p>
             </div>
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Search & Filter Section */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search videos..."
+                placeholder="Search by lesson title..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
               />
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Filter className="inline mr-2" size={16} />
-                Category
-              </label>
+            <div className="flex items-center gap-3">
+              <Filter className="text-gray-400 shrink-0" size={20} />
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
               >
-                {classData.categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name} ({category.count})
-                  </option>
+                {classData.categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name} ({cat.count})</option>
                 ))}
               </select>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sort By
-              </label>
-              <select className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                <option>Most Recent</option>
-                <option>Most Watched</option>
-                <option>Duration: Short to Long</option>
-                <option>Duration: Long to Short</option>
-              </select>
-            </div>
           </div>
         </div>
-      </div>
 
-      {/* Video Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {filteredVideos.map((video) => (
-          <div
-            key={video.id}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all group cursor-pointer border border-gray-200"
-            onClick={() => handleVideoClick(video.id)}
-          >
-            {/* Video Thumbnail */}
-            <div className="relative overflow-hidden">
-              <img
-                src={video.thumbnail}
-                alt={video.title}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://via.placeholder.com/400x225/FF6B6B/FFFFFF?text=${encodeURIComponent(video.title.substring(0, 30))}`;
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-              <div className="absolute bottom-4 left-4 right-4">
-                <div className="flex items-center justify-between text-white">
-                  <div className="flex items-center bg-black/60 px-2 py-1 rounded">
-                    <Clock size={14} className="mr-1" />
-                    <span className="text-sm">{video.duration}</span>
-                  </div>
-                  {video.watched > 0 && (
-                    <div className="bg-green-600 px-2 py-1 rounded text-sm">
-                      {video.watched}% watched
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
-                  <Play className="text-white" size={32} />
-                </div>
-              </div>
-            </div>
-
-            {/* Video Info */}
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
-                {video.title}
-              </h3>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{video.description}</p>
-              
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                <div className="flex items-center">
-                  <Eye size={14} className="mr-1" />
-                  <span>{video.views.toLocaleString()} views</span>
-                </div>
-                <div className="flex items-center">
-                  <Calendar size={14} className="mr-1" />
-                  <span>{formatDate(video.uploadDate)}</span>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              {video.watched > 0 && (
-                <div className="mb-4">
-                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-red-600 to-red-700 rounded-full"
-                      style={{ width: `${video.watched}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleVideoClick(video.id);
-                  }}
-                  className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-semibold text-sm flex items-center"
-                >
-                  <Play className="mr-2" size={16} />
-                  Watch Now
-                </button>
-                
-                <div className="flex gap-2">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Bookmark functionality
-                    }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Save for later"
-                  >
-                    <Bookmark size={18} className="text-gray-500 hover:text-red-600" />
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Share functionality
-                    }}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Share video"
-                  >
-                    <Share2 size={18} className="text-gray-500 hover:text-red-600" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredVideos.length === 0 && (
-        <div className="text-center py-12">
-          <div className="inline-block p-4 bg-gradient-to-r from-red-100 to-red-200 rounded-full mb-4">
-            <Video className="text-red-700" size={48} />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No videos found</h3>
-          <p className="text-gray-600">Try adjusting your search filters</p>
-        </div>
-      )}
-
-      {/* Video Popup Modal */}
-      {showVideoPopup && selectedVideo && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900">
-                {classData.videoLinks.find(v => v.id === selectedVideo)?.title}
-              </h3>
-              <button
-                onClick={handleClosePopup}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6">
-              {/* YouTube Video Player */}
-              <div className="relative pb-[56.25%] h-0 mb-6 rounded-xl overflow-hidden">
-                <iframe
-                  src={`https://www.youtube.com/embed/${getYouTubeId(classData.videoLinks.find(v => v.id === selectedVideo)?.url || '')}${resumeTimestamp ? `?start=${resumeTimestamp}` : ''}`}
-                  className="absolute top-0 left-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title="Video player"
+        {/* Video Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {filteredVideos.map((video) => (
+            <div
+              key={video.id}
+              className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden cursor-pointer"
+              onClick={() => handleVideoClick(video.id)}
+            >
+              <div className="relative aspect-video">
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                  <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                    <h4 className="font-bold text-gray-900 mb-2">Description</h4>
-                    <p className="text-gray-600">
-                      {classData.videoLinks.find(v => v.id === selectedVideo)?.description}
-                    </p>
-                  </div>
-                  
-                  <div className="flex gap-4">
-                    <button className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold flex items-center">
-                      <Bookmark className="mr-2" size={18} />
-                      Save for Later
-                    </button>
-                    <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 flex items-center">
-                      <Download className="mr-2" size={18} />
-                      Download Notes
-                    </button>
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+                <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/70 text-white text-xs font-bold rounded flex items-center gap-1">
+                  <Clock size={12} /> {video.duration}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Play className="text-white fill-current" size={24} />
                   </div>
                 </div>
-                
-                <div className="space-y-4">
-                  <div className="bg-red-50 rounded-xl p-4">
-                    <h4 className="font-bold text-gray-900 mb-2">Video Details</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Duration:</span>
-                        <span className="font-semibold">{classData.videoLinks.find(v => v.id === selectedVideo)?.duration}</span>
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">
+                  {video.title}
+                </h3>
+                <p className="text-sm text-gray-500 line-clamp-2 mb-4">
+                  {video.description}
+                </p>
+                <div className="flex items-center justify-between text-xs text-gray-400 font-medium">
+                  <div className="flex items-center gap-1">
+                    <Eye size={14} /> {video.views.toLocaleString()} views
+                  </div>
+                  <div>{formatDate(video.uploadDate)}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredVideos.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mb-12">
+            <Video className="mx-auto text-gray-200 mb-4" size={64} />
+            <h3 className="text-xl font-bold text-gray-900">No lessons found</h3>
+            <p className="text-gray-500">Try adjusting your search or filters to find what you need.</p>
+          </div>
+        )}
+
+        {/* Video Popup Modal */}
+        {showVideoPopup && selectedVideo && (
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 line-clamp-1">
+                  {classData.videoLinks.find(v => v.id === selectedVideo)?.title}
+                </h3>
+                <button
+                  onClick={handleClosePopup}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
+                >
+                  <ChevronLeft size={24} className="rotate-90" />
+                </button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+                <div className="aspect-video w-full bg-black">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${getYouTubeId(classData.videoLinks.find(v => v.id === selectedVideo)?.url || '')}${resumeTimestamp ? `?start=${resumeTimestamp}` : ''}`}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <div className="p-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2">
+                      <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <FileText size={20} className="text-red-600" /> Lesson Description
+                      </h4>
+                      <p className="text-gray-600 leading-relaxed mb-8">
+                        {classData.videoLinks.find(v => v.id === selectedVideo)?.description}
+                      </p>
+                      <div className="flex flex-wrap gap-4">
+                        <button className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all flex items-center gap-2">
+                          <Bookmark size={20} /> Bookmark Lesson
+                        </button>
+                        <button className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center gap-2">
+                          <Download size={20} /> Download Materials
+                        </button>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Uploaded:</span>
-                        <span className="font-semibold">{formatDate(classData.videoLinks.find(v => v.id === selectedVideo)?.uploadDate || '')}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Views:</span>
-                        <span className="font-semibold">{classData.videoLinks.find(v => v.id === selectedVideo)?.views.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                        <h4 className="font-bold text-gray-900 mb-4">Lesson Details</h4>
+                        <div className="space-y-4 text-sm font-medium">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Duration:</span>
+                            <span className="text-gray-900">{classData.videoLinks.find(v => v.id === selectedVideo)?.duration}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Release Date:</span>
+                            <span className="text-gray-900">{formatDate(classData.videoLinks.find(v => v.id === selectedVideo)?.uploadDate || '')}</span>
+                          </div>
+                          <div className="flex justify-between pt-4 border-t border-gray-200">
+                            <span className="text-gray-500">Views:</span>
+                            <span className="text-gray-900">{classData.videoLinks.find(v => v.id === selectedVideo)?.views.toLocaleString()}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h4 className="font-bold text-gray-900 mb-2">Next Video</h4>
-                    <button 
-                      onClick={() => {
-                        const nextVideo = classData.videoLinks.find(v => v.id === selectedVideo + 1);
-                        if (nextVideo) {
-                          setSelectedVideo(nextVideo.id);
-                        }
-                      }}
-                      className="text-red-700 hover:text-red-800 font-medium text-sm"
-                    >
-                      Continue to next lesson →
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Footer */}
-      <footer className="mt-auto pt-8">
-        <div className="max-w-7xl mx-auto pt-6 border-t border-gray-200">
-          <div className="bg-red-200 rounded-2xl p-6 shadow-lg">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-center md:text-left mb-4 md:mb-0">
-                <div className="flex items-center justify-center md:justify-start mb-2">
-                  <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-red-700 rounded-full flex items-center justify-center mr-3 shadow-lg">
-                    <Home className="w-5 h-5 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">A9 Education Center</h2>
+        {/* Footer Section */}
+        <footer className="mt-auto border-t border-gray-200 py-12">
+          <div className="bg-red-50 rounded-3xl p-8 border border-red-100 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-6">
+            <div>
+              <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-200">
+                  <Home className="text-white" size={20} />
                 </div>
-                <p className="text-gray-700">Video Learning Portal • {classData.name}</p>
+                <h2 className="text-xl font-bold text-gray-900">A9 Education Center</h2>
               </div>
-              
-              <div className="text-center md:text-right">
-                <p className="text-sm text-gray-700 mb-1">© {new Date().getFullYear()} A9 Education Center</p>
-                <p className="text-xs text-gray-600">All rights reserved</p>
-              </div>
+              <p className="text-gray-500 text-sm">Empowering students with high-quality video lessons across Sri Lanka.</p>
             </div>
-            
-            <div className="mt-6 pt-4 border-t border-red-300 text-center">
-              <p className="text-sm text-gray-700">
-                Galle, Sri Lanka • 📞 +94 91 223 4455
-              </p>
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-900">© 2024 A9 Education</p>
+                <p className="text-xs text-gray-500">Online Learning Portal</p>
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </StudentLayout>
   );
 };
 

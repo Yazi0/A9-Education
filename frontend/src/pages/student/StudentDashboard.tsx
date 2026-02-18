@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import api from "../../api/axios";
 
+import StudentLayout from "../../layouts/StudentLayout";
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [activeSlide, setActiveSlide] = useState(0);
@@ -149,11 +151,11 @@ const StudentDashboard = () => {
   const learningGoals: any[] = [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col">
+    <StudentLayout>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">
             Welcome back, <span className="text-red-600">{loading ? "..." : userData?.name || userData?.username}!</span>
           </h1>
           <p className="text-gray-600 mt-2">Here's your learning progress for today</p>
@@ -164,20 +166,6 @@ const StudentDashboard = () => {
             <div className="relative">
               <Bell className="text-gray-600 cursor-pointer hover:text-red-600 transition-colors" size={24} />
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <img
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userData?.username || "Guest"}&backgroundColor=b6e3f4`}
-                alt="Profile"
-                className="w-12 h-12 rounded-full border-2 border-white shadow-lg"
-              />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Grade {userData?.current_grade || "N/A"} Student</p>
-              <p className="text-sm text-gray-500">ID: {userData?.student_id || "N/A"}</p>
             </div>
           </div>
         </div>
@@ -286,7 +274,7 @@ const StudentDashboard = () => {
         <div className="lg:col-span-2">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {quickActions.map((action, index) => (
                 <button
                   key={index}
@@ -311,7 +299,7 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* Learning Goals */}
+          {/* Learning Goals Placeholder */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Learning Goals</h2>
@@ -319,28 +307,14 @@ const StudentDashboard = () => {
                 Set New Goal <RightIcon size={16} className="ml-1" />
               </button>
             </div>
-            <div className="space-y-4">
-              {learningGoals.map((goal, index) => (
-                <div key={index} className="group">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900">{goal.goal}</span>
-                    <span className="text-sm font-semibold text-gray-700">{goal.progress}%</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${goal.color} rounded-full transition-all duration-700 group-hover:shadow-lg`}
-                      style={{ width: `${goal.progress}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+            <div className="text-center py-8">
+              <p className="text-gray-500">No learning goals set yet.</p>
             </div>
           </div>
         </div>
 
-        {/* Recent Activity & Progress */}
+        {/* Recent Activity Placeholder */}
         <div className="space-y-6">
-          {/* Recent Activity */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Recent Activity</h2>
@@ -348,19 +322,8 @@ const StudentDashboard = () => {
                 View All
               </button>
             </div>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center p-4 rounded-xl bg-gray-50 hover:bg-red-50 transition-colors group">
-                  <div className={`w-10 h-10 ${activity.color} rounded-lg flex items-center justify-center text-lg mr-4`}>
-                    {activity.icon}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-500">{activity.time}</p>
-                  </div>
-                  <div className="w-2 h-2 bg-red-500 rounded-full group-hover:animate-pulse"></div>
-                </div>
-              ))}
+            <div className="text-center py-8">
+              <p className="text-gray-500">No recent activity.</p>
             </div>
           </div>
         </div>
@@ -369,36 +332,27 @@ const StudentDashboard = () => {
       {/* Footer */}
       <footer className="mt-auto">
         <div className="max-w-7xl mx-auto pt-6 border-t border-gray-200">
-          <div className="bg-red-200 rounded-2xl p-6 shadow-lg">
+          <div className="bg-red-50 rounded-2xl p-6 shadow-sm border border-red-100">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-center md:text-left mb-4 md:mb-0">
                 <div className="flex items-center justify-center md:justify-start mb-2">
                   <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-red-700 rounded-full flex items-center justify-center mr-3 shadow-lg">
                     <Home className="w-5 h-5 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">A9 Education Center</h2>
+                  <h2 className="text-xl font-bold text-gray-900">A9 Education Center</h2>
                 </div>
-                <p className="text-gray-700">Empowering students through quality education since 2010</p>
+                <p className="text-gray-600 text-sm">Empowering students through quality education since 2010</p>
               </div>
 
               <div className="text-center md:text-right">
-                <p className="text-sm text-gray-700 mb-1">© {new Date().getFullYear()} A9 Education Center</p>
-                <p className="text-xs text-gray-600 mb-3">All rights reserved</p>
+                <p className="text-sm text-gray-600 mb-1">© {new Date().getFullYear()} A9 Education Center</p>
+                <p className="text-xs text-gray-500">All rights reserved</p>
               </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-red-300 text-center">
-              <p className="text-sm text-gray-700">
-                Galle, Sri Lanka • 📞 +94 91 223 4455 • ✉️ info@a9education.lk
-              </p>
-              <p className="text-xs text-gray-600 mt-2">
-                "Education is the passport to the future, for tomorrow belongs to those who prepare for it today."
-              </p>
             </div>
           </div>
         </div>
       </footer>
-    </div>
+    </StudentLayout>
   );
 };
 

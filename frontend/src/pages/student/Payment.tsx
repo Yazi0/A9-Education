@@ -1,6 +1,6 @@
-// Updated Payment.tsx
 import { useParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Lock, Shield, CreditCard, Calendar, BookOpen } from "lucide-react";
+import { CheckCircle, Lock, Shield, BookOpen } from "lucide-react";
+import StudentLayout from "../../layouts/StudentLayout";
 
 const Payment = () => {
   const { id } = useParams();
@@ -32,8 +32,8 @@ const Payment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
+    <StudentLayout>
+      <div className="max-w-6xl mx-auto flex-1 w-full">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Complete Enrollment</h1>
@@ -182,7 +182,7 @@ const Payment = () => {
           </div>
         </div>
       </div>
-    </div>
+    </StudentLayout>
   );
 };
 

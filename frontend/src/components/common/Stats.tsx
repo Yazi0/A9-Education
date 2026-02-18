@@ -32,7 +32,7 @@ const Stats: React.FC<StatsProps> = ({ classes }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
       {stats.map((stat, index) => (
         <div key={index} className="bg-white rounded-2xl p-6 shadow-lg">
           <div className="flex items-center">

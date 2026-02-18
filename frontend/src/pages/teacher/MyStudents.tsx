@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, CreditCard, CheckCircle, XCircle, Calendar, Filter, Search, Mail, Phone, MapPin, User, ChevronDown, ChevronUp } from "lucide-react";
-import TeacherDashboard from "./TeacherDashboard";
+import api from "../../api/axios";
 
 // Define TypeScript interfaces
 interface Student {
@@ -22,133 +22,53 @@ type StudentKey = keyof Student;
 const MyStudents = () => {
   const [selectedGrade, setSelectedGrade] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [paymentMonth, setPaymentMonth] = useState("");
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: StudentKey; direction: 'asc' | 'desc' }>({ 
-    key: 'name', 
-    direction: 'asc' 
+  const [sortConfig, setSortConfig] = useState<{ key: StudentKey; direction: 'asc' | 'desc' }>({
+    key: 'name',
+    direction: 'asc'
   });
-  
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
 
   const grades = [
-    "Grade 6", "Grade 7", "Grade 8", "Grade 9", 
+    "Grade 6", "Grade 7", "Grade 8", "Grade 9",
     "Grade 10", "Grade 11", "Grade 12"
   ];
 
-  const initialStudents: Student[] = [
-    {
-      id: 1,
-      name: "Yasiru Nimsara",
-      studentId: "STU/GAL/G-8/S00001",
-      grade: "Grade 8",
-      district: "Galle",
-      email: "yasiru.nimsara@example.com",
-      phone: "+94 77 123 4567",
-      joinDate: "2023-01-15",
-      paidMonths: ["January", "February", "March", "April"],
-      totalPaid: 40000,
-      status: "active"
-    },
-    {
-      id: 2,
-      name: "Kamal Perera",
-      studentId: "STU/COL/G-10/S00002",
-      grade: "Grade 10",
-      district: "Colombo",
-      email: "kamal.perera@example.com",
-      phone: "+94 71 234 5678",
-      joinDate: "2023-02-20",
-      paidMonths: ["January", "February", "March", "April", "May"],
-      totalPaid: 50000,
-      status: "active"
-    },
-    {
-      id: 3,
-      name: "Samantha Silva",
-      studentId: "STU/KAN/G-11/S00003",
-      grade: "Grade 11",
-      district: "Kandy",
-      email: "samantha.silva@example.com",
-      phone: "+94 76 345 6789",
-      joinDate: "2023-03-10",
-      paidMonths: ["January", "February"],
-      totalPaid: 20000,
-      status: "pending"
-    },
-    {
-      id: 4,
-      name: "Nimal Fernando",
-      studentId: "STU/GAM/G-9/S00004",
-      grade: "Grade 9",
-      district: "Gampaha",
-      email: "nimal.fernando@example.com",
-      phone: "+94 72 456 7890",
-      joinDate: "2023-01-05",
-      paidMonths: ["January", "February", "March", "April", "May", "June"],
-      totalPaid: 60000,
-      status: "active"
-    },
-    {
-      id: 5,
-      name: "Chamari Jayasuriya",
-      studentId: "STU/MAT/G-12/S00005",
-      grade: "Grade 12",
-      district: "Matara",
-      email: "chamari.j@example.com",
-      phone: "+94 78 567 8901",
-      joinDate: "2023-02-28",
-      paidMonths: ["January", "February", "March"],
-      totalPaid: 30000,
-      status: "inactive"
-    },
-    {
-      id: 6,
-      name: "Dasun Shanaka",
-      studentId: "STU/KAL/G-7/S00006",
-      grade: "Grade 7",
-      district: "Kalutara",
-      email: "dasun.s@example.com",
-      phone: "+94 70 678 9012",
-      joinDate: "2023-03-15",
-      paidMonths: ["January", "February", "March", "April"],
-      totalPaid: 40000,
-      status: "active"
-    },
-    {
-      id: 7,
-      name: "Harshani Ratnayake",
-      studentId: "STU/NUW/G-8/S00007",
-      grade: "Grade 8",
-      district: "Nuwara Eliya",
-      email: "harshani.r@example.com",
-      phone: "+94 74 789 0123",
-      joinDate: "2023-01-20",
-      paidMonths: ["January", "February"],
-      totalPaid: 20000,
-      status: "pending"
-    },
-    {
-      id: 8,
-      name: "Ravindu Kumarasinghe",
-      studentId: "STU/HAM/G-10/S00008",
-      grade: "Grade 10",
-      district: "Hambantota",
-      email: "ravindu.k@example.com",
-      phone: "+94 75 890 1234",
-      joinDate: "2023-02-10",
-      paidMonths: ["January", "February", "March", "April", "May", "June", "July"],
-      totalPaid: 70000,
-      status: "active"
-    }
-  ];
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [students, setStudents] = useState<Student[]>(initialStudents);
+  // Fetch students from API
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get("users/");
+        // Filter for students only if API returns all users
+        const allUsers = Array.isArray(response.data) ? response.data : (response.data.results || []);
+        const studentUsers = allUsers.filter((u: any) => u.role === 'student');
+
+        const mappedStudents: Student[] = studentUsers.map((u: any) => ({
+          id: u.id,
+          name: u.name || u.username,
+          studentId: u.student_id || "N/A",
+          grade: u.current_grade || "Unknown",
+          district: u.district || "Unknown",
+          email: u.email || "",
+          phone: u.phone || "Not set",
+          joinDate: u.date_joined ? u.date_joined.split('T')[0] : "2024-01-01",
+          paidMonths: [], // This would ideally come from a payments API
+          totalPaid: 0,
+          status: 'active'
+        }));
+
+        setStudents(mappedStudents);
+      } catch (err) {
+        console.error("Error fetching students:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   const handleSort = (key: StudentKey) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -161,62 +81,29 @@ const MyStudents = () => {
   const sortedStudents = [...students].sort((a, b) => {
     const aValue = a[sortConfig.key];
     const bValue = b[sortConfig.key];
-    
+
     if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortConfig.direction === 'asc' 
+      return sortConfig.direction === 'asc'
         ? aValue.localeCompare(bValue)
         : bValue.localeCompare(aValue);
     }
-    
+
     if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return sortConfig.direction === 'asc' 
+      return sortConfig.direction === 'asc'
         ? aValue - bValue
         : bValue - aValue;
     }
-    
+
     return 0;
   });
 
   const filteredStudents = sortedStudents.filter(student => {
     const matchesGrade = selectedGrade === "all" || student.grade === selectedGrade;
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.district.toLowerCase().includes(searchTerm.toLowerCase());
+      student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.district.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesGrade && matchesSearch;
   });
-
-  const handlePaymentClick = (student: Student) => {
-    setSelectedStudent(student);
-    setPaymentMonth("");
-    setPaymentAmount("10000"); // Default payment amount
-    setShowPaymentModal(true);
-  };
-
-  const handlePaymentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedStudent || !paymentMonth || !paymentAmount) return;
-
-    // Update student's paid months and total
-    const updatedStudents = students.map(student => {
-      if (student.id === selectedStudent.id) {
-        const updatedPaidMonths = [...student.paidMonths, paymentMonth];
-        const updatedTotalPaid = student.totalPaid + parseInt(paymentAmount);
-        const updatedStatus: 'active' | 'pending' | 'inactive' = updatedPaidMonths.length >= 3 ? "active" : student.status;
-        return {
-          ...student,
-          paidMonths: updatedPaidMonths,
-          totalPaid: updatedTotalPaid,
-          status: updatedStatus
-        };
-      }
-      return student;
-    });
-
-    setStudents(updatedStudents);
-    setShowPaymentModal(false);
-    setSelectedStudent(null);
-    alert(`Payment of LKR ${paymentAmount} recorded for ${selectedStudent.name} for ${paymentMonth}`);
-  };
 
   const getStatusBadge = (status: 'active' | 'pending' | 'inactive') => {
     const styles = {
@@ -224,7 +111,7 @@ const MyStudents = () => {
       pending: "bg-yellow-100 text-yellow-800",
       inactive: "bg-red-100 text-red-800"
     };
-    
+
     const icons = {
       active: <CheckCircle className="w-4 h-4" />,
       pending: <Calendar className="w-4 h-4" />,
@@ -242,15 +129,22 @@ const MyStudents = () => {
     );
   };
 
-  const getRemainingMonths = (paidMonths: string[]) => {
-    return months.filter(month => !paidMonths.includes(month));
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-indigo-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
+          <p className="text-gray-600 font-medium">Loading your students...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Statistics
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === "active").length;
   const totalRevenue = students.reduce((sum, student) => sum + student.totalPaid, 0);
-  const averagePayment = Math.round(totalRevenue / students.length);
+  const averagePayment = students.length > 0 ? Math.round(totalRevenue / students.length) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 p-4 md:p-8">
@@ -288,7 +182,7 @@ const MyStudents = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -300,7 +194,7 @@ const MyStudents = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -314,7 +208,7 @@ const MyStudents = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -345,7 +239,7 @@ const MyStudents = () => {
               />
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
@@ -371,7 +265,7 @@ const MyStudents = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th 
+                <th
                   className="p-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('name')}
                 >
@@ -383,7 +277,7 @@ const MyStudents = () => {
                   </div>
                 </th>
                 <th className="p-4 text-left text-sm font-semibold text-gray-700">ID</th>
-                <th 
+                <th
                   className="p-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('grade')}
                 >
@@ -394,7 +288,7 @@ const MyStudents = () => {
                     )}
                   </div>
                 </th>
-                <th 
+                <th
                   className="p-4 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('district')}
                 >
