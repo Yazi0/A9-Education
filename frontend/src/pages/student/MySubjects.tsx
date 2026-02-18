@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BookOpen } from "lucide-react";
 import type { Subject } from "../../components/models/Subject";
 import MySubjectsHeader from "../../components/common/MySubjectsHeader";
 import StreamFilter from "../../components/common/StreamFilter";
@@ -231,66 +232,84 @@ const MySubjects = () => {
 
   return (
     <StudentLayout>
-      <div className="flex flex-col">
+      <div className="flex flex-col space-y-4 md:space-y-6">
         {/* Header */}
-        <MySubjectsHeader enrolledCount={enrolledSubjects.length} />
+        <div className="px-1 md:px-0">
+          <MySubjectsHeader enrolledCount={enrolledSubjects.length} />
+        </div>
 
         {/* Stream Filter */}
-        <StreamFilter
-          streamFilter={streamFilter}
-          onStreamFilterChange={setStreamFilter}
-        />
+        <div className="px-1 md:px-0">
+          <StreamFilter
+            streamFilter={streamFilter}
+            onStreamFilterChange={setStreamFilter}
+          />
+        </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div className="mx-1 md:mx-0 mb-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="text-yellow-600">⚠️</span>
+              <span className="text-xl">⚠️</span>
               <div>
-                <p className="text-yellow-800 font-medium">Using demo data</p>
-                <p className="text-yellow-700 text-sm">{error}</p>
+                <p className="text-yellow-800 font-bold text-sm">Demo Data Active</p>
+                <p className="text-yellow-700 text-xs mt-0.5">{error}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Content based on active tab */}
-        {activeTab === "enrolled" && (
-          <>
-            {filteredSubjects.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredSubjects.map((subject) => (
-                  <EnrolledSubjectCard key={subject.id} subject={subject} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState />
-            )}
-          </>
-        )}
+        <div className="px-1 md:px-0 pb-10">
+          {activeTab === "enrolled" && (
+            <>
+              {filteredSubjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                  {filteredSubjects.map((subject) => (
+                    <EnrolledSubjectCard key={subject.id} subject={subject} />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 bg-white rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center px-6 shadow-sm">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <BookOpen size={32} className="text-gray-300" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">No Classes Found</h3>
+                  <p className="text-gray-500 max-w-sm mb-6">You haven't enrolled in any classes for this stream yet.</p>
+                  <button
+                    onClick={() => window.location.href = "/subjects"}
+                    className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-md active:scale-95"
+                  >
+                    Browse Classes
+                  </button>
+                </div>
+              )}
+            </>
+          )}
 
-        {activeTab === "pending" && (
-          <>
-            {pendingSubjects.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {pendingSubjects.map((subject) => (
-                  <PendingSubjectCard
-                    key={subject.id}
-                    subjectId={subject.id}
-                    onEnrollSuccess={() => window.location.reload()}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="No Pending Subjects"
-                message="You have no pending subject enrollments."
-                actionText="Explore Subjects"
-                onAction={() => window.location.href = "/subjects"}
-              />
-            )}
-          </>
-        )}
+          {activeTab === "pending" && (
+            <>
+              {pendingSubjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                  {pendingSubjects.map((subject) => (
+                    <PendingSubjectCard
+                      key={subject.id}
+                      subjectId={subject.id}
+                      onEnrollSuccess={() => window.location.reload()}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="No Pending Subjects"
+                  message="You have no pending subject enrollments at the moment."
+                  actionText="Explore Subjects"
+                  onAction={() => window.location.href = "/subjects"}
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
     </StudentLayout>
   );
