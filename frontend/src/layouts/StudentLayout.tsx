@@ -8,6 +8,18 @@ interface StudentLayoutProps {
 
 const StudentLayout = ({ children }: StudentLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem("sidebarCollapsed");
+    return saved === "true";
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(prev => {
+      const newState = !prev;
+      localStorage.setItem("sidebarCollapsed", String(newState));
+      return newState;
+    });
+  };
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -28,10 +40,15 @@ const StudentLayout = ({ children }: StudentLayoutProps) => {
       </div>
 
       {/* Sidebar */}
-      <StudentSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <StudentSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapse}
+      />
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 p-4 md:p-8 mt-16 md:mt-0 min-h-screen">
+      <main className={`flex-1 ${isSidebarCollapsed ? "md:ml-20" : "md:ml-64"} p-4 md:p-8 mt-16 md:mt-0 min-h-screen transition-all duration-300 ease-in-out`}>
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
