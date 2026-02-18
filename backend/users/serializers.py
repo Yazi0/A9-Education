@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'role', 'name', 'phone', 
             'address', 'district', 'student_id', 'current_grade', 
             'subject', 'grades', 'educational_qualifications', 'about', 'class_fee',
-            'date_joined'
+            'date_joined', 'profile_image'
         ]
         read_only_fields = ['student_id', 'date_joined']
 
@@ -20,7 +20,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'password', 'email', 'role', 'name', 
-            'phone', 'address', 'district', 'current_grade'
+            'phone', 'address', 'district', 'current_grade', 'profile_image'
         ]
 
     def create(self, validated_data):
