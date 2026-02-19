@@ -1,7 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { QrCode, Eye, EyeOff, Camera, X, Key, User } from "lucide-react";
+import { QrCode, Eye, EyeOff, Camera, X, Key, User, Home } from "lucide-react";
 import Img from "../../assets/image/bg.png";
 import ThemeImg from "../../assets/image/Theme.png";
 import Register from "./Register";
@@ -163,7 +163,15 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4 md:p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4 md:p-6 relative">
+      {/* Home Icon */}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 md:top-8 md:left-8 bg-white/80 p-3 rounded-full hover:bg-white hover:shadow-lg transition-all duration-300 text-red-600 z-50 flex items-center justify-center"
+      >
+        <Home className="w-6 h-6" />
+      </Link>
+
       <div className="w-full max-w-[450px] md:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto md:h-[600px] max-h-[95vh] md:max-h-[98vh] transition-all">
         {/* DESKTOP LEFT BANNER - Restored Classic Style */}
         <div className="hidden md:flex w-1/2 items-center justify-center bg-gradient-to-br from-red-600 to-red-700 p-8 overflow-hidden relative">
