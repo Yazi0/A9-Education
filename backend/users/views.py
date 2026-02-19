@@ -59,3 +59,8 @@ class TeacherDashboardView(APIView):
             return Response({'error': 'Access denied!'}, status=403)
         serializer = UserSerializer(user)
         return Response(serializer.data)
+
+class TeacherListView(generics.ListAPIView):
+    queryset = User.objects.filter(role='teacher')
+    serializer_class = UserSerializer
+    permission_classes = []
