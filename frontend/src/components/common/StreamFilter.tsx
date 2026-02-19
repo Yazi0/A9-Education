@@ -32,8 +32,10 @@ const StreamFilter: React.FC<StreamFilterProps> = ({
           </div>
         </div>
         <div className="pt-3 md:pt-0 border-t md:border-t-0 border-gray-100 flex justify-between items-center md:block md:text-right">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Term</p>
-          <p className="font-black text-red-700 text-sm md:text-base">Term 1, 2024</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Date</p>
+          <p className="font-black text-red-700 text-sm md:text-base">
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
         </div>
       </div>
     </div>

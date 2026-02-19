@@ -39,3 +39,23 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+class Student(User):
+    class Meta:
+        proxy = True
+        verbose_name = 'Student'
+        verbose_name_plural = 'Students'
+
+    def save(self, *args, **kwargs):
+        self.role = 'student'
+        super().save(*args, **kwargs)
+
+class Teacher(User):
+    class Meta:
+        proxy = True
+        verbose_name = 'Teacher'
+        verbose_name_plural = 'Teachers'
+
+    def save(self, *args, **kwargs):
+        self.role = 'teacher'
+        super().save(*args, **kwargs)

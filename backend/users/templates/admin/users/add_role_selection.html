@@ -1,0 +1,63 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+    .selection-container {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 50px;
+    }
+    .role-card {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 30px;
+        width: 250px;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+        color: #333;
+    }
+    .role-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-color: #417690;
+    }
+    .role-card h2 {
+        margin-top: 0;
+        color: #417690;
+    }
+    .role-card p {
+        color: #666;
+    }
+    .role-icon {
+        font-size: 50px;
+        margin-bottom: 20px;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{% trans "Select User Type to Add" %}</h1>
+    <p>Choose whether you want to add a Student or a Teacher to the system.</p>
+    
+    <div class="selection-container">
+        <a href="?role=student" class="role-card">
+            <span class="role-icon">🎓</span>
+            <h2>Student</h2>
+            <p>Add a new student with grade and student ID details.</p>
+        </a>
+        
+        <a href="?role=teacher" class="role-card">
+            <span class="role-icon">👨‍🏫</span>
+            <h2>Teacher</h2>
+            <p>Add a new teacher with subjects, qualifications and fee info.</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

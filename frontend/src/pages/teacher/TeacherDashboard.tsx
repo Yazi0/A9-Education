@@ -17,7 +17,8 @@ import {
   Loader2,
   Calendar,
   Clock,
-  User
+  User,
+  Camera
 } from "lucide-react";
 import api from "../../api/axios";
 
@@ -28,6 +29,7 @@ interface TeacherData {
   educational_qualifications?: string;
   about?: string;
   class_fee?: string;
+  profile_image?: string;
 }
 
 const TeacherDashboard = () => {
@@ -54,6 +56,8 @@ const TeacherDashboard = () => {
   });
   const [tempGrades, setTempGrades] = useState("");
   const [saving, setSaving] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Fetch teacher data on mount
   useEffect(() => {
@@ -75,7 +79,8 @@ const TeacherDashboard = () => {
             : ["Not specified"],
           educational_qualifications: userData.educational_qualifications,
           about: userData.about,
-          class_fee: userData.class_fee
+          class_fee: userData.class_fee,
+          profile_image: userData.profile_image
         };
 
         setTeacher(teacherData);
@@ -112,6 +117,8 @@ const TeacherDashboard = () => {
     setIsEditing(false);
     setEditData({ ...teacher });
     setTempGrades(teacher.grades.join(", "));
+    setSelectedFile(null);
+    setPreviewUrl(null);
   };
 
   const handleSaveEdit = async () => {
@@ -121,20 +128,32 @@ const TeacherDashboard = () => {
 
       const updatedGrades = tempGrades.split(",").map(g => g.trim()).filter(g => g);
 
-      await api.patch("users/me/", {
-        name: editData.name,
-        subject: editData.subject,
-        grades: updatedGrades.join(", "),
-        educational_qualifications: editData.educational_qualifications,
-        about: editData.about,
-        class_fee: editData.class_fee
+      const formData = new FormData();
+      formData.append("name", editData.name);
+      formData.append("subject", editData.subject);
+      formData.append("grades", updatedGrades.join(", "));
+      if (editData.educational_qualifications) formData.append("educational_qualifications", editData.educational_qualifications);
+      if (editData.about) formData.append("about", editData.about);
+      if (editData.class_fee) formData.append("class_fee", editData.class_fee);
+
+      if (selectedFile) {
+        formData.append("profile_image", selectedFile);
+      }
+
+      const response = await api.patch("users/me/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       setTeacher({
         ...editData,
-        grades: updatedGrades
+        grades: updatedGrades,
+        profile_image: response.data.profile_image
       });
       setIsEditing(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
       alert("Profile updated successfully!");
     } catch (err: any) {
       console.error("Error saving profile:", err);
@@ -142,6 +161,19 @@ const TeacherDashboard = () => {
       alert("Failed to update profile.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size should be less than 5MB");
+        return;
+      }
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
     }
   };
 
@@ -273,10 +305,21 @@ const TeacherDashboard = () => {
         <div className="p-4 border-t border-gray-200">
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-indigo-600" />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-indigo-100 shrink-0">
+                {teacher.profile_image ? (
+                  <img
+                    src={teacher.profile_image}
+                    alt={teacher.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(teacher.name);
+                    }}
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-indigo-600" />
+                )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-700 truncate">{teacher.name}</p>
                 <p className="text-xs text-gray-500">Teacher</p>
               </div>
@@ -298,8 +341,19 @@ const TeacherDashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm">
-              <GraduationCap className="w-9 h-9 text-indigo-600" />
+            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden">
+              {teacher.profile_image ? (
+                <img
+                  src={teacher.profile_image}
+                  alt={teacher.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(teacher.name);
+                  }}
+                />
+              ) : (
+                <GraduationCap className="w-9 h-9 text-indigo-600" />
+              )}
             </div>
 
             <div>
@@ -357,6 +411,34 @@ const TeacherDashboard = () => {
           </div>
 
           <div className="p-6">
+            {isEditing && (
+              <div className="mb-8 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl p-6 bg-gray-50">
+                <div className="relative group cursor-pointer">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md bg-indigo-100 flex items-center justify-center">
+                    {previewUrl || teacher.profile_image ? (
+                      <img
+                        src={previewUrl || teacher.profile_image}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Camera className="w-8 h-8 text-indigo-400" />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </div>
+                <p className="mt-3 text-sm font-medium text-gray-600">Click to change profile image</p>
+                <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Name */}
               <div>
