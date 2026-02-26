@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Lock, Shield, CheckCircle, CreditCard, Building, Smartphone, Wallet } from 'lucide-react';
 import type { BankDetails, CardDetails, Class, MobileDetails, MobileProvider, PaymentMethod } from '../models/Class';
+import SuccessPopup from './SuccessPopup';
+import api from '../../api/axios';
 
 
 interface PaymentPopupProps {
@@ -18,6 +20,7 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({
 }) => {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [paymentStep, setPaymentStep] = useState<"method" | "details">("method");
+  const [saving, setSaving] = useState(false);
   const [cardDetails, setCardDetails] = useState<CardDetails>({
     cardNumber: "",
     cardName: "",
@@ -34,6 +37,15 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({
     mobileNumber: "",
     pin: ""
   });
+  const [paymentMonth, setPaymentMonth] = useState(new Date().getMonth() + 1);
+  const [paymentYear, setPaymentYear] = useState(new Date().getFullYear());
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const years = [new Date().getFullYear(), new Date().getFullYear() + 1];
 
   const paymentMethods: PaymentMethod[] = [
     { id: "card", name: "Credit/Debit Card", icon: <CreditCard className="text-red-600" size={24} />, description: "Visa, MasterCard, Amex" },
@@ -64,6 +76,8 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({
     setPaymentMethod(method);
     setPaymentStep("details");
   };
+
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handlePayment = () => {
     // Validate based on payment method
@@ -96,10 +110,32 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({
     }
 
     // Simulate payment processing
-    setTimeout(() => {
-      alert(`Payment successful! You are now enrolled in ${selectedClass.name}.`);
-      onPaymentComplete();
-    }, 1500);
+    setSaving(true);
+    
+    const paymentData = {
+      subject: selectedClass.id,
+      amount: selectedClass.price,
+      payment_method: paymentMethod,
+      month: paymentMonth,
+      year: paymentYear,
+      // ... existing details depending on method
+    };
+
+    api.post('payments/create/', paymentData)
+      .then(() => {
+        setSaving(false);
+        setShowSuccess(true);
+      })
+      .catch((err) => {
+        setSaving(false);
+        alert("Payment submission failed. Please try again.");
+        console.error(err);
+      });
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    onPaymentComplete();
   };
 
   const renderPaymentDetails = () => {
@@ -395,6 +431,39 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column - Payment Details */}
               <div className="lg:col-span-2 space-y-6">
+                {/* Month/Year Selection */}
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <CheckCircle className="text-green-600" size={20} />
+                    Subscription Period
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                      <select 
+                        value={paymentMonth}
+                        onChange={(e) => setPaymentMonth(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500"
+                      >
+                        {months.map((m, i) => (
+                          <option key={m} value={i + 1}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                      <select 
+                        value={paymentYear}
+                        onChange={(e) => setPaymentYear(parseInt(e.target.value))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500"
+                      >
+                        {years.map(y => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 {/* Payment Method Header */}
                 <div className="bg-white rounded-2xl shadow-lg p-6">
                   <div className="flex items-center justify-between mb-6">
@@ -429,10 +498,20 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({
                 {/* Payment Button */}
                 <button
                   onClick={handlePayment}
-                  className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+                  disabled={saving}
+                  className={`w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  <Lock className="mr-2" size={20} />
-                  Pay Rs. {selectedClass.price} & Complete Enrollment
+                  {saving ? (
+                    <div className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    <>
+                      <Lock className="mr-2" size={20} />
+                      Pay Rs. {selectedClass.price} & Complete Enrollment
+                    </>
+                  )}
                 </button>
 
                 {/* Security Note */}
@@ -500,6 +579,12 @@ const PaymentPopup: React.FC<PaymentPopupProps> = ({
           )}
         </div>
       </div>
+
+      <SuccessPopup 
+        isOpen={showSuccess}
+        message={`Payment successful! You are now enrolled in ${selectedClass.name}.`}
+        onClose={handleSuccessClose}
+      />
     </div>
   );
 };

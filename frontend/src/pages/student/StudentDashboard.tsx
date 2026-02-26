@@ -9,7 +9,6 @@ import {
   Clock,
   TrendingUp,
   Bell,
-  ChevronRight,
   Home,
   Target,
   Zap,
@@ -17,7 +16,9 @@ import {
   Trophy,
   TrendingDown,
   ChevronLeft,
-  ChevronRight as RightIcon
+  ChevronRight,
+  ChevronRight as RightIcon,
+  FileText
 } from "lucide-react";
 import api from "../../api/axios";
 
@@ -89,7 +90,7 @@ const StudentDashboard = () => {
       description: "Update personal information",
       icon: <User className="text-white" size={20} />,
       color: "from-red-600 to-red-700",
-      onClick: () => navigate("/Profile")
+      onClick: () => navigate("/profile")
     },
     {
       title: "All Subjects",

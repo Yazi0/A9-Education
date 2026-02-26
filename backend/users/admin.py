@@ -1,7 +1,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.template.response import TemplateResponse
-from .models import User, Student, Teacher
+from .models import User, Student, Teacher, Grade
+
+@admin.register(Grade)
+class GradeAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -10,6 +15,7 @@ class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'name', 'student_id', 'role', 'email', 'is_staff')
     list_filter = ('role', 'is_staff', 'is_superuser', 'is_active', 'district', 'current_grade')
     search_fields = ('username', 'name', 'email', 'student_id', 'phone')
+    filter_horizontal = ('grades',) # Multiple select widget for teachers
     ordering = ('username',)
 
     readonly_fields = ('student_id', 'profile_image_preview')

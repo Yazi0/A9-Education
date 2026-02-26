@@ -87,9 +87,17 @@ const ClassVideos = () => {
       try {
         setLoading(true);
         setError(null);
-        const classRes = await api.get<ApiClass>(`content/subjects/${classId}/classes/`);
-        const apiClass = classRes.data;
-        const videoLinks: VideoLink[] = apiClass.videos.map((video: ApiVideo) => {
+        
+        // Use the new flattened videos endpoint
+        const [subjectRes, videosRes] = await Promise.all([
+          api.get(`subjects/${classId}/`), // Get subject details for header
+          api.get<ApiVideo[]>(`content/subjects/${classId}/videos/`)
+        ]);
+
+        const subjectData = subjectRes.data;
+        const apiVideos = videosRes.data;
+
+        const videoLinks: VideoLink[] = apiVideos.map((video: ApiVideo) => {
           let youtubeId = "";
           if (video.youtube_video_id) {
             youtubeId = video.youtube_video_id;
@@ -101,10 +109,10 @@ const ClassVideos = () => {
             id: video.id,
             title: video.title,
             url: video.video_url,
-            duration: video.duration,
+            duration: video.duration || "TBA",
             thumbnail: video.thumbnail_url || `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`,
-            description: video.description,
-            category: video.category.toLowerCase().replace(/\s+/g, '-'),
+            description: video.description || "",
+            category: (video.category || "General").toLowerCase().replace(/\s+/g, '-'),
             views: video.views || 0,
             uploadDate: video.created_at,
             watched: video.watched_percentage || 0
@@ -126,17 +134,17 @@ const ClassVideos = () => {
         ];
 
         setClassData({
-          id: apiClass.id,
-          name: apiClass.title,
-          stream: apiClass.stream,
-          level: apiClass.level,
-          teacher: apiClass.teacher,
+          id: subjectData.id,
+          name: subjectData.name,
+          stream: subjectData.stream,
+          level: subjectData.level || "Advanced Level",
+          teacher: subjectData.teacher_name || "TBA",
           videoLinks,
           categories
         });
       } catch (err: any) {
         console.error("Error fetching class data:", err);
-        setError("Failed to load class videos. Please try again later.");
+        setError("Failed to load class videos. Please ensure you have paid for this month.");
         setClassData(getMockClassData());
       } finally {
         setLoading(false);

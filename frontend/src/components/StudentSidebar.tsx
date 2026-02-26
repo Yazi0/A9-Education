@@ -7,7 +7,8 @@ import {
     LogOut,
     X,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../api/axios";
@@ -51,6 +52,7 @@ const StudentSidebar = ({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
         { name: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/studentdashboard" },
         { name: "My Profile", icon: <User size={20} />, path: "/profile" },
         { name: "All Subjects", icon: <BookOpen size={20} />, path: "/subjects" },
+        { name: "Teachers", icon: <Users size={20} />, path: "/student/teachers" },
         { name: "My Subjects", icon: <BarChart3 size={20} />, path: "/student/my-subjects" },
     ];
 

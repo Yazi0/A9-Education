@@ -11,7 +11,7 @@ class Class(models.Model):
 
 
 class Video(models.Model):
-    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     video_url = models.URLField()
 

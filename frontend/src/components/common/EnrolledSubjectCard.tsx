@@ -27,7 +27,7 @@ const EnrolledSubjectCard: React.FC<EnrolledSubjectCardProps> = ({ subject }) =>
         {/* Notes & Past Papers */}
         <StudyMaterialsSection 
           materials={subject.teacherUploads.notes}
-          classId={subject.id}
+          subjectId={subject.id}
         />
 
         {/* Progress & Last Accessed */}

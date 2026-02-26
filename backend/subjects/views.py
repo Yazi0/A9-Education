@@ -1,4 +1,4 @@
-from rest_framework.generics import ListAPIView, CreateAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from .models import Subject
 from .serializers import SubjectSerializer
@@ -10,7 +10,7 @@ class SubjectListView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'student' and user.current_grade:
-            return Subject.objects.filter(grade=user.current_grade)
+            return Subject.objects.filter(grades=user.current_grade)
         return Subject.objects.all()
 
 
@@ -29,3 +29,8 @@ class SubjectCreateView(CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
+
+class SubjectDetailView(RetrieveAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    permission_classes = [IsAuthenticated]

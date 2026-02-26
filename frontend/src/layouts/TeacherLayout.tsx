@@ -1,84 +1,60 @@
-import { useNavigate } from "react-router-dom";
-import { Pencil, LogOut } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import TeacherSidebar from "../components/teacher/Sidebar";
+import { Menu } from "lucide-react";
 
-/* ================= TYPES ================= */
-
-interface TeacherData {
-  name: string;
-  subject: string;
-  grades: string[];
-  avatar?: string;
+interface TeacherLayoutProps {
+  children: ReactNode;
 }
 
-interface SidebarProps {
-  teacher: TeacherData;
-  onEditProfile?: () => void;
-}
+const TeacherLayout = ({ children }: TeacherLayoutProps) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem("teacherSidebarCollapsed");
+    return saved === "true";
+  });
 
-/* ================= COMPONENT ================= */
-
-const Sidebar = ({ teacher, onEditProfile }: SidebarProps) => {
-  const navigate = useNavigate();
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(prev => {
+      const newState = !prev;
+      localStorage.setItem("teacherSidebarCollapsed", String(newState));
+      return newState;
+    });
+  };
 
   return (
-    <aside className="w-72 bg-white border-r min-h-screen p-6 flex flex-col">
-      {/* Teacher Info */}
-      <div className="flex items-center gap-4 mb-6">
-        <img
-          src={teacher.avatar}
-          alt="Teacher Avatar"
-          className="w-14 h-14 rounded-full border"
-        />
-        <div>
-          <h2 className="font-bold text-gray-900">{teacher.name}</h2>
-          <p className="text-sm text-gray-600">{teacher.subject}</p>
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-1 shadow-sm border border-gray-100 overflow-hidden">
+            <img src="/icon.png" className="w-full h-full object-contain" alt="Logo" />
+          </div>
+          <span className="font-bold text-gray-800">Teacher Panel</span>
         </div>
-      </div>
-
-      {/* Grades */}
-      <div className="mb-6">
-        <p className="text-xs uppercase text-gray-500 mb-2">Grades</p>
-        <div className="flex flex-wrap gap-2">
-          {teacher.grades.length > 0 ? (
-            teacher.grades.map((grade) => (
-              <span
-                key={grade}
-                className="px-3 py-1 text-xs bg-indigo-100 text-indigo-600 rounded-full"
-              >
-                {grade}
-              </span>
-            ))
-          ) : (
-            <span className="text-sm text-gray-400">No grades assigned</span>
-          )}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-col gap-2 mt-auto">
-        {onEditProfile && (
-          <button
-            onClick={onEditProfile}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition"
-          >
-            <Pencil size={16} />
-            Edit Profile
-          </button>
-        )}
-
         <button
-          onClick={() => {
-            localStorage.clear();
-            navigate("/login");
-          }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <LogOut size={16} />
-          Logout
+          <Menu size={24} />
         </button>
       </div>
-    </aside>
+
+      {/* Sidebar */}
+      <TeacherSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapse}
+      />
+
+      {/* Main Content */}
+      <main className={`flex-1 ${isSidebarCollapsed ? "md:ml-20" : "md:ml-64"} p-4 md:p-8 mt-16 md:mt-0 min-h-screen transition-all duration-300 ease-in-out`}>
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
+    </div>
   );
 };
 
-export default Sidebar;
+export default TeacherLayout;

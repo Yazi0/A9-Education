@@ -54,15 +54,23 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, onEnrollClick }) => {
         </div>
 
         {/* Teacher Info */}
-        <div className="flex items-center mb-4">
-          <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
-            {cls.teacher.charAt(0)}
+        <div className="flex items-center mb-5 p-3 bg-gray-50 rounded-2xl border border-gray-100/50 group-hover:bg-red-50/50 group-hover:border-red-100 transition-colors duration-300">
+          <div className="relative">
+            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg transform group-hover:rotate-6 transition-transform duration-300">
+              {cls.teacher.charAt(0)}
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
-          <div>
-            <p className="font-medium">{cls.teacher}</p>
-            <div className="flex items-center">
-              <Star className="text-amber-500" size={14} />
-              <span className="ml-1 text-sm font-medium">{cls.rating}</span>
+          <div className="ml-4">
+            <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-0.5">Instructor</p>
+            <p className="font-extrabold text-gray-900 group-hover:text-red-700 transition-colors">{cls.teacher}</p>
+            <div className="flex items-center gap-1">
+              <div className="flex text-amber-500">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={10} fill={i < 4 ? "currentColor" : "none"} />
+                ))}
+              </div>
+              <span className="text-[10px] font-bold text-gray-500 ml-1">{cls.rating} reviews</span>
             </div>
           </div>
         </div>

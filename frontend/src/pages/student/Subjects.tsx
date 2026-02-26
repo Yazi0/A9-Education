@@ -17,6 +17,7 @@ const Classes = () => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [studentGrade, setStudentGrade] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,9 +29,16 @@ const Classes = () => {
         const response = await api.get("subjects/");
         // Also fetch user enrollments to check 'paid' status
         const enrollmentsRes = await api.get("enrollments/my/");
+        // Fetch student profile to get their grade
+        const profileRes = await api.get("users/me/");
 
         const subjects = response.data;
         const enrollments = enrollmentsRes.data;
+        const profile = profileRes.data;
+
+        setStudentGrade(profile.current_grade_name);
+
+        setStudentGrade(profile.current_grade_name);
 
         // Map API data to Class interface
         const mappedClasses: Class[] = subjects.map((subject: any) => {
@@ -39,21 +47,25 @@ const Classes = () => {
             e.subject === subject.id || e.subject_id === subject.id
           );
 
+          // level: Join multiple grade names or use "General"
+          const levels = subject.grades_detail?.map((g: any) => g.name).join(", ") || "General";
+
           return {
             id: subject.id,
             name: subject.name || subject.title,
-            stream: subject.stream || "General", // Ensure backend sends this or provide default
-            level: subject.grade || subject.level || "General", // Ensure backend sends this
-            teacher: subject.teacher_name || "TBA", // Ensure backend serializes teacher name
-            rating: 4.8, // Placeholder or fetch if available
-            enrolled: subject.enrolled_count || 0, // Placeholder
+            stream: subject.stream || "General", 
+            level: levels, 
+            teacher: subject.teacher_name || "TBA",
+            rating: 4.8, 
+            enrolled: subject.enrolled_count || 0,
             price: parseFloat(subject.class_fee) || 0,
             paid: isEnrolled,
-            duration: "1 Year", // Placeholder or fetch
+            duration: "1 Year",
             description: subject.description || "",
-            topics: [], // Placeholder
-            examDate: "TBA", // Placeholder
-            classType: "Regular" // Placeholder
+            topics: [], 
+            examDate: "TBA",
+            classType: "Regular",
+            grades: subject.grades || [] // Keep raw IDs for easier sorting
           };
         });
 
@@ -101,7 +113,9 @@ const Classes = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">All Subjects</h1>
-            <p className="text-gray-600 mt-2">Explore and enroll in our wide range of academic courses to achieve your goals</p>
+            <p className="text-gray-600 mt-2">Explore and enroll in subjects tailored for 
+              <span className="text-red-600 font-bold ml-1">{studentGrade || "your level"}</span>
+            </p>
           </div>
           <div className="mt-4 md:mt-0 px-4 py-2 bg-red-50 text-red-700 rounded-lg text-sm font-medium border border-red-100">
             Available Courses: {classes.length}
@@ -111,9 +125,12 @@ const Classes = () => {
         {/* SummarySection */}
         <Summary classes={classes} />
 
-        <div className="mb-8" />
+        <div className="mb-0" />
 
         {/* Search and Filter */}
+        <div className="flex items-center gap-2 mb-6 mt-12">
+           <h2 className="text-2xl font-black tracking-tight text-gray-900">Available Subjects</h2>
+        </div>
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8">
           <SearchFilter
             searchTerm={searchTerm}

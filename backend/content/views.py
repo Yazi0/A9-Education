@@ -2,6 +2,9 @@ from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from .models import Class, Video, StudyMaterial
 from .serializers import ClassSerializer, VideoSerializer, StudyMaterialSerializer
+from payments.models import Payment
+from datetime import datetime
+from rest_framework.exceptions import PermissionDenied
 
 class ClassListView(ListAPIView):
     serializer_class = ClassSerializer
@@ -9,6 +12,21 @@ class ClassListView(ListAPIView):
 
     def get_queryset(self):
         subject_id = self.kwargs['subject_id']
+        user = self.request.user
+        
+        if user.role == 'student':
+            now = datetime.now()
+            has_paid = Payment.objects.filter(
+                student=user,
+                subject_id=subject_id,
+                month=now.month,
+                year=now.year,
+                status__in=['approved', 'pending']
+            ).exists()
+            
+            if not has_paid:
+                raise PermissionDenied("You must pay for this month to access content.")
+                
         return Class.objects.filter(subject_id=subject_id)
 
 class ClassCreateView(CreateAPIView):
@@ -25,8 +43,23 @@ class VideoListView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        class_id = self.kwargs['class_id']
-        return Video.objects.filter(class_obj_id=class_id)
+        subject_id = self.kwargs['subject_id']
+        user = self.request.user
+        
+        if user.role == 'student':
+            now = datetime.now()
+            has_paid = Payment.objects.filter(
+                student=user,
+                subject_id=subject_id,
+                month=now.month,
+                year=now.year,
+                status__in=['approved', 'pending']
+            ).exists()
+            
+            if not has_paid:
+                raise PermissionDenied("You must pay for this month to access videos.")
+                
+        return Video.objects.filter(subject_id=subject_id)
 
 class VideoCreateView(CreateAPIView):
     serializer_class = VideoSerializer
@@ -43,6 +76,21 @@ class StudyMaterialListView(ListAPIView):
 
     def get_queryset(self):
         subject_id = self.kwargs['subject_id']
+        user = self.request.user
+        
+        if user.role == 'student':
+            now = datetime.now()
+            has_paid = Payment.objects.filter(
+                student=user,
+                subject_id=subject_id,
+                month=now.month,
+                year=now.year,
+                status__in=['approved', 'pending']
+            ).exists()
+            
+            if not has_paid:
+                raise PermissionDenied("You must pay for this month to access study materials.")
+                
         return StudyMaterial.objects.filter(subject_id=subject_id)
 
 class StudyMaterialCreateView(CreateAPIView):
@@ -52,3 +100,6 @@ class StudyMaterialCreateView(CreateAPIView):
 class StudyMaterialDeleteView(DestroyAPIView):
     queryset = StudyMaterial.objects.all()
     permission_classes = [IsAuthenticated]
+
+
+

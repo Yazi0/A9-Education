@@ -21,6 +21,7 @@ import About from "../pages/About";
 import Contact from "../pages/Contact";
 import Teachers from "../pages/Teachers";
 import Subject from "../pages/Subject";
+import AllMaterials from "../pages/student/AllMaterials";
 
 const AppRoutes = () => {
   return (
@@ -54,11 +55,13 @@ const AppRoutes = () => {
         <Route path="/subject-content" element={<SubjectContent />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/student/my-subjects" element={<MySubjects />} />
+        <Route path="/student/teachers" element={<Teachers />} />
         <Route path="/student/classvideos/:classId" element={<ClassVideos />} />
         <Route
           path="/student/studymaterials/:classId"
           element={<StudyMaterials />}
         />
+        <Route path="/student/all-materials" element={<AllMaterials />} />
 
         {/* Teacher Routes */}
         <Route path="/teacherdashboard" element={<TeacherDashboard />} />

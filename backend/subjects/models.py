@@ -1,9 +1,9 @@
 from django.db import models
-from users.models import User
+from users.models import User, Grade
 
 class Subject(models.Model):
     name = models.CharField(max_length=100)
-    grade = models.CharField(max_length=20, default="Grade 13")
+    grades = models.ManyToManyField(Grade, related_name='subjects', blank=True)
     stream = models.CharField(max_length=50, default="Combined Maths")
     teacher = models.ForeignKey(
         'users.User', 
@@ -14,4 +14,4 @@ class Subject(models.Model):
     class_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
 
     def __str__(self):
-        return f"{self.name} - {self.grade} ({self.teacher.name})"
+        return f"{self.name} ({self.teacher.name})"

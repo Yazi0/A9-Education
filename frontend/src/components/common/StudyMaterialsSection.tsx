@@ -89,17 +89,12 @@ const StudyMaterialsSection: React.FC<StudyMaterialsSectionProps> = ({
         setLoading(true);
         setError(null);
         
-        let endpoint = '';
-        
-        // Determine which endpoint to use
-        if (subjectId) {
-          endpoint = `content/subjects/${subjectId}/materials/`;
-        } else if (classId) {
-          // If you have a classes endpoint for materials
-          endpoint = `content/classes/${classId}/materials/`;
-        } else {
-          throw new Error('Either subjectId or classId is required');
+        // Use the subject-based endpoint which is consistent with our refactored backend
+        const id = subjectId || classId;
+        if (!id) {
+          throw new Error('Subject ID is required');
         }
+        endpoint = `content/subjects/${id}/materials/`;
         
         const res = await api.get<ApiMaterial[]>(endpoint);
         
@@ -153,10 +148,9 @@ const StudyMaterialsSection: React.FC<StudyMaterialsSectionProps> = ({
   ];
 
   const handleViewAllNotes = () => {
-    if (classId) {
-      navigate(`/student/studymaterials/${classId}`);
-    } else if (subjectId) {
-      navigate(`/student/studymaterials/subject/${subjectId}`);
+    const id = subjectId || classId;
+    if (id) {
+      navigate(`/student/studymaterials/${id}`);
     }
   };
 

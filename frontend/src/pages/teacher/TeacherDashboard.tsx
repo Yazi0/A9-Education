@@ -21,11 +21,19 @@ import {
   Camera
 } from "lucide-react";
 import api from "../../api/axios";
+import TeacherLayout from "../../layouts/TeacherLayout";
+
+interface Grade {
+  id: number;
+  name: string;
+}
 
 interface TeacherData {
+  id?: number;
   name: string;
   subject: string;
-  grades: string[];
+  grades: number[]; // IDs
+  grades_detail?: Grade[];
   educational_qualifications?: string;
   about?: string;
   class_fee?: string;
@@ -54,7 +62,8 @@ const TeacherDashboard = () => {
     about: "",
     class_fee: ""
   });
-  const [tempGrades, setTempGrades] = useState("");
+  const [allGrades, setAllGrades] = useState<Grade[]>([]);
+  const [selectedGrades, setSelectedGrades] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -66,17 +75,20 @@ const TeacherDashboard = () => {
         setLoading(true);
         setError(null);
 
-        const response = await api.get("users/me/");
-        const userData = response.data;
+        const [profileRes, gradesRes] = await Promise.all([
+          api.get("users/me/"),
+          api.get("users/grades/")
+        ]);
+        
+        const userData = profileRes.data;
+        const gradesData = gradesRes.data;
 
         const teacherData: TeacherData = {
+          id: userData.id,
           name: userData.name || userData.username || "Teacher",
           subject: userData.subject || "Not specified",
-          grades: userData.grades
-            ? (typeof userData.grades === 'string'
-              ? userData.grades.split(",").map((g: string) => g.trim())
-              : userData.grades)
-            : ["Not specified"],
+          grades: userData.grades || [],
+          grades_detail: userData.grades_detail || [],
           educational_qualifications: userData.educational_qualifications,
           about: userData.about,
           class_fee: userData.class_fee,
@@ -85,7 +97,8 @@ const TeacherDashboard = () => {
 
         setTeacher(teacherData);
         setEditData(teacherData);
-        setTempGrades(teacherData.grades.join(", "));
+        setAllGrades(gradesData);
+        setSelectedGrades(userData.grades || []);
 
       } catch (err: any) {
         console.error("Error loading dashboard:", err);
@@ -110,13 +123,13 @@ const TeacherDashboard = () => {
   const handleEditClick = () => {
     setIsEditing(true);
     setEditData({ ...teacher });
-    setTempGrades(teacher.grades.join(", "));
+    setSelectedGrades(teacher.grades);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditData({ ...teacher });
-    setTempGrades(teacher.grades.join(", "));
+    setSelectedGrades(teacher.grades);
     setSelectedFile(null);
     setPreviewUrl(null);
   };
@@ -126,12 +139,15 @@ const TeacherDashboard = () => {
       setSaving(true);
       setError(null);
 
-      const updatedGrades = tempGrades.split(",").map(g => g.trim()).filter(g => g);
-
       const formData = new FormData();
       formData.append("name", editData.name);
       formData.append("subject", editData.subject);
-      formData.append("grades", updatedGrades.join(", "));
+      
+      // Append each grade ID
+      selectedGrades.forEach(id => {
+        formData.append("grades", id.toString());
+      });
+
       if (editData.educational_qualifications) formData.append("educational_qualifications", editData.educational_qualifications);
       if (editData.about) formData.append("about", editData.about);
       if (editData.class_fee) formData.append("class_fee", editData.class_fee);
@@ -146,11 +162,14 @@ const TeacherDashboard = () => {
         },
       });
 
-      setTeacher({
+      const updatedTeacher = {
         ...editData,
-        grades: updatedGrades,
+        grades: selectedGrades,
+        grades_detail: response.data.grades_detail,
         profile_image: response.data.profile_image
-      });
+      };
+      
+      setTeacher(updatedTeacher);
       setIsEditing(false);
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -182,6 +201,14 @@ const TeacherDashboard = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const toggleGrade = (gradeId: number) => {
+    setSelectedGrades(prev => 
+      prev.includes(gradeId) 
+        ? prev.filter(id => id !== gradeId) 
+        : [...prev, gradeId]
+    );
   };
 
   const handleLogout = () => {
@@ -278,66 +305,8 @@ const TeacherDashboard = () => {
     );
   }
 
-  // Main dashboard UI
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 hidden md:flex flex-col fixed left-0 top-0 h-screen bg-white border-r border-gray-200">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold text-indigo-600">Teacher Panel</h2>
-          <p className="text-sm text-gray-500 mt-1">Education Platform</p>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-2">
-          {sidebarItems.map(item => (
-            <button
-              key={item.name}
-              onClick={() => navigate(item.path)}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-lg font-medium
-                text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-200"
-            >
-              {item.icon}
-              {item.name}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-gray-200">
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-indigo-100 shrink-0">
-                {teacher.profile_image ? (
-                  <img
-                    src={teacher.profile_image}
-                    alt={teacher.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(teacher.name);
-                    }}
-                  />
-                ) : (
-                  <User className="w-5 h-5 text-indigo-600" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-700 truncate">{teacher.name}</p>
-                <p className="text-xs text-gray-500">Teacher</p>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 text-gray-600 hover:text-red-600 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="md:ml-64 flex-1 p-4 md:p-8">
+    <TeacherLayout>
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
@@ -477,26 +446,38 @@ const TeacherDashboard = () => {
 
               {/* Grades */}
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Grades</label>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Taught Grades</label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={tempGrades}
-                    onChange={(e) => setTempGrades(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Grade 8, Grade 9, Grade 10"
-                    disabled={saving}
-                  />
+                  <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                    {allGrades.map(grade => (
+                      <button
+                        key={grade.id}
+                        type="button"
+                        onClick={() => toggleGrade(grade.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          selectedGrades.includes(grade.id)
+                            ? "bg-red-600 text-white shadow-md transform scale-105"
+                            : "bg-white text-gray-600 border border-gray-200 hover:border-red-300"
+                        }`}
+                      >
+                        {grade.name}
+                      </button>
+                    ))}
+                  </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {teacher.grades.map(grade => (
-                      <span
-                        key={grade}
-                        className="px-3 py-1 text-sm rounded-full bg-indigo-100 text-indigo-700 font-medium"
-                      >
-                        {grade}
-                      </span>
-                    ))}
+                    {teacher.grades_detail && teacher.grades_detail.length > 0 ? (
+                      teacher.grades_detail.map(grade => (
+                        <span
+                          key={grade.id}
+                          className="px-3 py-1 text-sm rounded-full bg-indigo-100 text-indigo-700 font-medium"
+                        >
+                          {grade.name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-500 italic">No grades specified</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -620,8 +601,7 @@ const TeacherDashboard = () => {
           </div>
         </div>
 
-      </main>
-    </div>
+    </TeacherLayout>
   );
 };
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FileText,
@@ -12,61 +12,142 @@ import {
   FileImage,
   Eye,
   Printer,
-  Home
+  Home,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import StudentLayout from "../../layouts/StudentLayout";
+import api from "../../api/axios";
+
+// API Interface
+interface ApiMaterial {
+  id: number;
+  title: string;
+  file: string;
+  created_at: string;
+}
+
+interface Material {
+  id: number;
+  title: string;
+  type: string;
+  size: string;
+  downloadUrl: string;
+  uploadDate: string;
+  pages: number | string;
+  description: string;
+}
 
 const StudyMaterials = () => {
-  const { classId } = useParams();
+  const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [classData, setClassData] = useState<{
+    id: number;
+    name: string;
+    stream: string;
+    level: string;
+    teacher: string;
+    materials: Material[];
+    categories: { id: string; name: string; count: number }[];
+  } | null>(null);
 
-  const classData = {
-    id: 1,
-    name: "Combined Mathematics",
-    stream: "Science",
-    level: "Advanced Level",
-    teacher: "Mr. Perera",
-    materials: [
-      {
-        id: 1,
-        title: "Calculus Complete Notes.pdf",
-        type: "pdf",
-        size: "2.4 MB",
-        downloadUrl: "/downloads/calculus.pdf",
-        uploadDate: "2024-01-15",
-        pages: 45,
-        description: "Complete calculus notes covering all chapters"
-      },
-      {
-        id: 2,
-        title: "Algebra Formulas and Exercises.doc",
-        type: "doc",
-        size: "1.8 MB",
-        downloadUrl: "/downloads/algebra.doc",
-        uploadDate: "2024-01-10",
-        pages: 32,
-        description: "Algebra formulas with practice exercises"
-      },
-      {
-        id: 3,
-        title: "2020-2023 Past Papers.zip",
-        type: "zip",
-        size: "15 MB",
-        downloadUrl: "/downloads/past-papers.zip",
-        uploadDate: "2024-01-05",
-        pages: 120,
-        description: "Complete past papers collection 2020-2023"
-      }
-    ],
-    categories: [
-      { id: "all", name: "All Materials", count: 3 },
-      { id: "pdf", name: "PDF Documents", count: 1 },
-      { id: "doc", name: "Word Documents", count: 1 },
-      { id: "zip", name: "Archives", count: 1 }
-    ]
+  const handleBack = () => {
+    navigate(-1);
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!classId) return;
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [subjectRes, materialsRes] = await Promise.all([
+          api.get(`subjects/${classId}/`),
+          api.get<ApiMaterial[]>(`content/subjects/${classId}/materials/`)
+        ]);
+
+        const s = subjectRes.data;
+        const apiMaterials = materialsRes.data;
+
+        const materials: Material[] = apiMaterials.map(m => {
+          const extension = m.file.split('.').pop()?.toLowerCase() || 'pdf';
+          return {
+            id: m.id,
+            title: m.title,
+            type: extension,
+            size: "TBA",
+            downloadUrl: m.file,
+            uploadDate: m.created_at,
+            pages: "TBA",
+            description: `Study notes for ${s.name}`
+          };
+        });
+
+        const typeCounts: Record<string, number> = {};
+        materials.forEach(m => {
+          typeCounts[m.type] = (typeCounts[m.type] || 0) + 1;
+        });
+
+        const categories = [
+          { id: "all", name: "All Materials", count: materials.length },
+          ...Object.entries(typeCounts).map(([id, count]) => ({
+            id,
+            name: id.toUpperCase() + " Files",
+            count
+          }))
+        ];
+
+        setClassData({
+          id: s.id,
+          name: s.name,
+          stream: s.stream,
+          level: s.level || "Advanced Level",
+          teacher: s.teacher_name || "TBA",
+          materials,
+          categories
+        });
+
+      } catch (err: any) {
+        console.error("Error fetching materials:", err);
+        setError("Failed to load materials. Please ensure you have paid for this month.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [classId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-12 h-12 text-red-600 animate-spin mb-4" />
+        <p className="text-gray-600 text-lg">Loading study materials...</p>
+      </div>
+    );
+  }
+
+  if (error || !classData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center border border-red-100">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Materials</h3>
+          <p className="text-gray-600 mb-4">{error || "Subject not found."}</p>
+          <button
+            onClick={() => handleBack()}
+            className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-all"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const filteredMaterials = classData.materials.filter(material => {
     const matchesSearch = material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,40 +155,6 @@ const StudyMaterials = () => {
     const matchesType = typeFilter === "all" || material.type === typeFilter;
     return matchesSearch && matchesType;
   });
-
-  const handleBack = () => {
-    navigate(`/student/my-subjects`);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case 'pdf': return <FileText className="text-red-600" size={24} />;
-      case 'doc': return <File className="text-blue-600" size={24} />;
-      case 'excel': return <FileSpreadsheet className="text-green-600" size={24} />;
-      case 'zip': return <FileArchive className="text-amber-600" size={24} />;
-      case 'image': return <FileImage className="text-purple-600" size={24} />;
-      default: return <FileText className="text-gray-600" size={24} />;
-    }
-  };
-
-  const getFileColor = (type: string) => {
-    switch (type) {
-      case 'pdf': return 'bg-red-50 border-red-100';
-      case 'doc': return 'bg-blue-50 border-blue-100';
-      case 'excel': return 'bg-green-50 border-green-100';
-      case 'zip': return 'bg-amber-50 border-amber-100';
-      case 'image': return 'bg-purple-50 border-purple-100';
-      default: return 'bg-gray-50 border-gray-100';
-    }
-  };
 
   return (
     <StudentLayout>
@@ -190,12 +237,16 @@ const StudyMaterials = () => {
                 </div>
               </div>
               <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2">
-                <button
+                <a
+                  href={material.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2"
                 >
                   <Download size={18} /> Download
-                </button>
+                </a>
                 <button
+                  onClick={() => window.open(material.downloadUrl, '_blank')}
                   className="p-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all"
                 >
                   <Eye size={20} />

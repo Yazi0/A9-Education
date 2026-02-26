@@ -47,95 +47,72 @@ const MySubjects = () => {
         setError(null);
 
         const res = await api.get("enrollments/my/");
-        const enrollments: Enrollment[] = res.data;
+        const enrollments: any[] = res.data;
 
-        // Separate enrolled and pending subjects
         const enrolled: Subject[] = [];
         const pending: Subject[] = [];
 
-        enrollments.forEach((enrollment: Enrollment) => {
-          const subjectData = enrollment.subject;
-          const baseSubject: Partial<Subject> = {
-            id: subjectData.id,
-            name: subjectData.name,
-            stream: subjectData.stream || "General",
-            level: "Advanced Level", // You might want to get this from API
-            teacher: "TBD", // You might want to get this from API
+        for (const enrollment of enrollments) {
+          const s = enrollment.subject_details;
+          
+          // Basic fields common to all subjects
+          const baseSubject: Subject = {
+            id: s.id,
+            name: s.name,
+            stream: s.stream || "General",
+            level: s.grades_detail?.map((g: any) => g.name).join(", ") || "General",
+            teacher: s.teacher_name || "TBA",
             progress: enrollment.progress || 0,
-            nextClass: "TBD", // You might want to get this from API
-            assignments: { pending: 0, completed: 0 }, // You might want to get this from API
-            materials: 0, // You might want to get this from API
-            latestGrade: "N/A", // You might want to get this from API
-            lastAccessed: "Never", // You might want to get this from API
-            clsDate: "TBD", // You might want to get this from API
-            studentCount: 0, // You might want to get this from API
-            lastVideoWatched: {
-              id: 0,
-              title: "No videos watched yet",
-              url: "",
-              duration: "0 min",
-              progress: 0,
-              timestamp: "00:00"
-            },
-            teacherUploads: {
-              videoLinks: [],
-              notes: []
-            }
+            nextClass: "TBA",
+            assignments: { pending: 0, completed: 0 },
+            materials: 0,
+            latestGrade: "N/A",
+            lastAccessed: "Never",
+            clsDate: "TBA",
+            studentCount: s.enrolled_count || 0,
+            teacherUploads: { videoLinks: [], notes: [] }
           };
 
           if (enrollment.status === 'enrolled') {
-            enrolled.push({
-              ...baseSubject,
-              // Add mock data or fetch from separate API endpoints
-              teacher: "Mr. Perera",
-              progress: enrollment.progress || 75,
-              nextClass: "Tomorrow, 10:00 AM",
-              assignments: { pending: 2, completed: 8 },
-              materials: 15,
-              latestGrade: "A",
-              lastAccessed: "2 hours ago",
-              clsDate: "Sat 8.00 am",
-              studentCount: 24,
-              lastVideoWatched: {
-                id: 1,
-                title: `${subjectData.name} - Lesson 1`,
-                url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA",
-                duration: "45 min",
-                progress: 65,
-                timestamp: "23:45"
-              },
-              teacherUploads: {
-                videoLinks: [
-                  {
-                    id: 1,
-                    title: `${subjectData.name} - Lesson 1`,
-                    url: "https://www.youtube.com/watch?v=9Qa0J4KuGqA",
-                    duration: "45 min",
-                    thumbnail: "https://img.youtube.com/vi/9Qa0J4KuGqA/maxresdefault.jpg",
-                    description: `Introduction to ${subjectData.name}`
-                  }
-                ],
-                notes: [
-                  {
-                    id: 1,
-                    title: `${subjectData.name} Complete Notes.pdf`,
-                    type: "pdf",
-                    size: "2.4 MB",
-                    downloadUrl: `/downloads/${subjectData.name.toLowerCase()}.pdf`
-                  }
-                ]
-              }
-            } as Subject);
-          } else if (enrollment.status === 'pending' || enrollment.status === 'payment_pending') {
+            // Fetch content for enrolled subjects
+            try {
+              const [videosRes, materialsRes] = await Promise.all([
+                api.get(`content/subjects/${s.id}/videos/`),
+                api.get(`content/subjects/${s.id}/materials/`)
+              ]);
+              
+              baseSubject.teacherUploads = {
+                videoLinks: videosRes.data.map((v: any) => ({
+                  id: v.id,
+                  title: v.title,
+                  url: v.video_url,
+                  duration: "TBA",
+                  thumbnail: `https://img.youtube.com/vi/${v.video_url.split('v=')[1]}/maxresdefault.jpg`
+                })),
+                notes: materialsRes.data.map((m: any) => ({
+                  id: m.id,
+                  title: m.title,
+                  type: "pdf",
+                  size: "TBA",
+                  downloadUrl: m.file
+                }))
+              };
+              baseSubject.materials = materialsRes.data.length;
+            } catch (contentErr) {
+              console.error(`Failed to fetch content for subject ${s.id}:`, contentErr);
+            }
+            enrolled.push(baseSubject);
+          } else {
+            // Pending/Payment Pending
             pending.push({
               ...baseSubject,
-              price: subjectData.price,
+              price: s.class_fee,
               status: enrollment.status,
-              paymentDue: enrollment.payment_due || "Jan 20, 2024",
-              examDate: enrollment.exam_date || "Aug 2024"
+              paymentDue: enrollment.payment_due || "TBA",
+              examDate: enrollment.exam_date || "TBA"
             } as Subject);
           }
-        });
+        }
 
         setEnrolledSubjects(enrolled);
         setPendingSubjects(pending);
@@ -143,8 +120,6 @@ const MySubjects = () => {
       } catch (err: any) {
         console.error("Error fetching subjects:", err);
         setError("Failed to load subjects. Please try again later.");
-
-        // Fallback to mock data if API fails
         setEnrolledSubjects(getMockEnrolledSubjects());
         setPendingSubjects(getMockPendingSubjects());
       } finally {

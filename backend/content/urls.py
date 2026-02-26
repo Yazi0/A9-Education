@@ -10,7 +10,7 @@ urlpatterns = [
     path('classes/create/', ClassCreateView.as_view()),
     path('classes/<int:pk>/delete/', ClassDeleteView.as_view()),
     
-    path('classes/<int:class_id>/videos/', VideoListView.as_view()),
+    path('subjects/<int:subject_id>/videos/', VideoListView.as_view()),
     path('videos/create/', VideoCreateView.as_view()),
     path('videos/<int:pk>/delete/', VideoDeleteView.as_view()),
     

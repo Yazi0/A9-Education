@@ -5,8 +5,8 @@ from .serializers import UserSerializer
 
 # This is MeView
 from rest_framework import generics
-from .serializers import UserSerializer, UserCreateSerializer
-from .models import User
+from .serializers import UserSerializer, UserCreateSerializer, GradeSerializer
+from .models import User, Grade
 
 # This is MeView
 class MeView(generics.RetrieveUpdateAPIView):
@@ -61,6 +61,17 @@ class TeacherDashboardView(APIView):
         return Response(serializer.data)
 
 class TeacherListView(generics.ListAPIView):
-    queryset = User.objects.filter(role='teacher')
     serializer_class = UserSerializer
+    permission_classes = []
+
+    def get_queryset(self):
+        queryset = User.objects.filter(role='teacher')
+        grade_id = self.request.query_params.get('grade')
+        if grade_id:
+            queryset = queryset.filter(grades__id=grade_id)
+        return queryset
+
+class GradeListView(generics.ListAPIView):
+    queryset = Grade.objects.all()
+    serializer_class = GradeSerializer
     permission_classes = []
