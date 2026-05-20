@@ -7,11 +7,10 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         import sys
-        # Execute migrations automatically when running the dev server
-        if 'runserver' in sys.argv:
+        # Execute migrations automatically on startup in both local and production
+        if not any(arg in sys.argv for arg in ['makemigrations', 'migrate', 'collectstatic']):
             from django.core.management import call_command
             try:
-                call_command('makemigrations', 'users', interactive=False)
                 call_command('migrate', interactive=False)
                 print("--- Database Migrated Successfully (Auto) ---")
 
