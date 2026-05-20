@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowRight,
   Video,
   Users,
   BarChart3,
@@ -18,8 +17,6 @@ import {
   Book,
   PenTool,
   Music,
-  Home as HomeIcon,
-  LogIn,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -86,7 +83,7 @@ const Home: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 overflow-hidden pt-16">
 
       {/* ================= NAVBAR ================= */}
       <Navbar />

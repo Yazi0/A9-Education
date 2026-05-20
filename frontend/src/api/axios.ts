@@ -26,10 +26,14 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) => {
+  (config: any) => {
     const token = localStorage.getItem("access");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      if (config.headers.set) {
+        config.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
     }
     return config;
   },

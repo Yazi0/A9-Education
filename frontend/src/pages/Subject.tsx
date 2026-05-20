@@ -56,7 +56,7 @@ const Subjects = () => {
   }, []);
 
   return (
-    <div className="bg-gray-50 text-gray-800">
+    <div className="bg-gray-50 text-gray-800 pt-16">
       <Navbar />
 
       {/* Hero */}

@@ -52,7 +52,7 @@ const Teachers = () => {
   }, []);
 
   return (
-    <div className="bg-gray-50 text-gray-800 min-h-screen">
+    <div className="bg-gray-50 text-gray-800 min-h-screen pt-16">
       <Navbar />
 
       {/* Hero */}

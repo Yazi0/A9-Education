@@ -25,7 +25,8 @@ const Register = ({ onClose }: Props) => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [district, setDistrict] = useState("");
-  const [grade, setGrade] = useState("G-8");
+  const [studentLevel, setStudentLevel] = useState<'OL' | 'AL'>('OL');
+  const [grade, setGrade] = useState("G-10");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -40,8 +41,17 @@ const Register = ({ onClose }: Props) => {
   ];
 
   const grades = [
-    "G-6", "G-7", "G-8", "G-9", "G-10", "G-11", "G-12"
+    "G-6", "G-7", "G-8", "G-9", "G-10", "G-11", "G-12", "G-13"
   ];
+
+  // Reset default grade on level toggle
+  useEffect(() => {
+    if (studentLevel === 'OL') {
+      setGrade("G-10");
+    } else {
+      setGrade("G-12");
+    }
+  }, [studentLevel]);
 
   // Generate student ID whenever district or grade changes
   useEffect(() => {
@@ -541,18 +551,41 @@ const Register = ({ onClose }: Props) => {
 
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <GraduationCap className="w-4 h-4" />
+                    Student Level *
+                  </label>
+                  <div className="relative">
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white font-semibold text-gray-700 text-sm"
+                      value={studentLevel}
+                      onChange={(e) => setStudentLevel(e.target.value as 'OL' | 'AL')}
+                    >
+                      <option value="OL">Ordinary Level (O/L)</option>
+                      <option value="AL">Advanced Level (A/L)</option>
+                    </select>
+                    <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-5 h-5 text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <BookOpen className="w-4 h-4" />
                     Grade Level *
                   </label>
                   <div className="relative">
                     <select
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent appearance-none bg-white font-semibold text-gray-700 text-sm"
                       value={grade}
                       onChange={(e) => setGrade(e.target.value)}
                     >
-                      {grades.map((g) => (
-                        <option key={g} value={g}>Grade {g.split('-')[1]}</option>
-                      ))}
+                      {grades
+                        .filter(g => {
+                          const num = Number(g.split('-')[1]);
+                          return studentLevel === 'OL' ? num <= 11 : num >= 12;
+                        })
+                        .map((g) => (
+                          <option key={g} value={g}>Grade {g.split('-')[1]}</option>
+                        ))}
                     </select>
                     <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-5 h-5 text-gray-400" />
                   </div>

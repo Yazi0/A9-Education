@@ -64,3 +64,25 @@ class Teacher(User):
     def save(self, *args, **kwargs):
         self.role = 'teacher'
         super().save(*args, **kwargs)
+
+class TeacherApplication(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+    name = models.CharField(max_length=255)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20)
+    subject = models.CharField(max_length=100)
+    grades = models.CharField(max_length=200, blank=True, null=True)
+    educational_qualifications = models.TextField()
+    about = models.TextField()
+    id_number = models.CharField(max_length=50)
+    id_photo = models.ImageField(upload_to='teacher_ids/')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.email})"
+

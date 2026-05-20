@@ -1,0 +1,432 @@
+import React, { useEffect, useState } from "react";
+import AdminLayout from "../../layouts/AdminLayout";
+import { 
+  FileText, GraduationCap, CheckCircle, Mail, Phone, Calendar, 
+  Search, ShieldAlert, Check, X, Award, ExternalLink, Printer, Plus, Send, Loader2 
+} from "lucide-react";
+import axiosInstance from "../../api/axios";
+
+const AdminApplications: React.FC = () => {
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState("");
+  const [inviteError, setInviteError] = useState("");
+  
+  // Modal for approval credentials
+  const [credentialsModal, setCredentialsModal] = useState<{
+    show: boolean;
+    name: string;
+    username: string;
+    email: string;
+    password: string;
+  } | null>(null);
+
+  const [error, setError] = useState("");
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.get("users/applications/");
+      setApplications(res.data);
+    } catch (err: any) {
+      console.error(err);
+      setError("Failed to load applications. Ensure you are logged in as an administrator.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteLoading(true);
+    setInviteSuccess("");
+    setInviteError("");
+
+    try {
+      await axiosInstance.post("users/applications/invite/", { email: inviteEmail });
+      setInviteSuccess(`Invitation link successfully emailed to: ${inviteEmail}`);
+      setInviteEmail("");
+    } catch (err: any) {
+      console.error(err);
+      setInviteError("Failed to send invitation. Please verify SMTP credentials or email format.");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleApprove = async (id: number, name: string, email: string) => {
+    if (!window.confirm(`Are you sure you want to approve ${name}'s application? This will create a teacher account and email credentials.`)) {
+      return;
+    }
+
+    setProcessingId(id);
+    try {
+      const res = await axiosInstance.post(`users/applications/${id}/approve/`);
+      const { username, password } = res.data;
+      
+      // Open credentials confirmation modal
+      setCredentialsModal({
+        show: true,
+        name,
+        email,
+        username,
+        password
+      });
+
+      // Refresh list
+      fetchApplications();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to approve application and create account.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const filteredApps = applications.filter(app => 
+    app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    app.subject.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <AdminLayout>
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Invite Teacher Form */}
+        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-md">
+            <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+              <Mail className="text-red-600 animate-pulse" size={24} />
+              Invite Prospective Teacher
+            </h3>
+            <p className="text-gray-500 text-sm mt-1">
+              Send a secure email invitation containing the Teacher Application web form link.
+            </p>
+          </div>
+          <form onSubmit={handleInvite} className="flex-1 max-w-lg flex gap-3">
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="teacher@example.com"
+              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all text-sm font-medium"
+              required
+            />
+            <button
+              type="submit"
+              disabled={inviteLoading}
+              className="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-6 rounded-xl text-sm flex items-center gap-2 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 shrink-0"
+            >
+              {inviteLoading ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+              Send Invite
+            </button>
+          </form>
+        </div>
+
+        {inviteSuccess && (
+          <div className="p-4 bg-green-50 border border-green-100 text-green-700 font-bold rounded-2xl text-sm animate-bounce">
+            {inviteSuccess}
+          </div>
+        )}
+
+        {inviteError && (
+          <div className="p-4 bg-red-50 border border-red-100 text-red-700 font-bold rounded-2xl text-sm">
+            {inviteError}
+          </div>
+        )}
+
+        {/* Applications List Section */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 md:p-8 border-b flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+              <h3 className="text-lg font-black text-gray-800">Teacher Applications</h3>
+              <p className="text-gray-500 text-xs mt-0.5">Review, print and approve prospective teachers</p>
+            </div>
+            <div className="relative max-w-xs w-full">
+              <Search className="absolute left-3 top-3 text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search by name, email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all text-sm font-medium"
+              />
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="animate-spin text-red-600 mb-3" size={40} />
+              <p className="text-gray-500 text-sm font-medium">Loading applications...</p>
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-600 font-bold">{error}</div>
+          ) : filteredApps.length === 0 ? (
+            <div className="p-16 text-center text-gray-400 font-medium">
+              <FileText className="mx-auto mb-4 text-gray-200" size={64} />
+              No applications found matching search criteria.
+            </div>
+          ) : (
+            <div className="divide-y">
+              {filteredApps.map((app) => (
+                <div key={app.id} className="p-6 md:p-8 hover:bg-gray-50/50 transition-colors space-y-6">
+                  
+                  {/* Summary row */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-xl shrink-0">
+                        {app.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-gray-900 leading-tight">{app.name}</h4>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 font-medium mt-1">
+                          <span className="flex items-center gap-1"><Mail size={14} />{app.email}</span>
+                          <span className="flex items-center gap-1"><Phone size={14} />{app.phone}</span>
+                          <span className="flex items-center gap-1"><Calendar size={14} />{new Date(app.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                      <span className={`text-[10px] uppercase font-black tracking-wider px-3 py-1 rounded-full ${app.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {app.status}
+                      </span>
+                      {app.status === 'pending' && (
+                        <button
+                          onClick={() => handleApprove(app.id, app.name, app.email)}
+                          disabled={processingId === app.id}
+                          className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-green-100 transition-all active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {processingId === app.id ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
+                          Approve Application
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          // Trigger window print of application
+                          const printWindow = window.open("", "_blank");
+                          if (printWindow) {
+                            printWindow.document.write(`
+                              <html>
+                                <head>
+                                  <title>Teacher Application - ${app.name}</title>
+                                  <style>
+                                    body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                                    .header { border-bottom: 2px solid #ccc; padding-bottom: 20px; margin-bottom: 30px; }
+                                    .title { font-size: 24px; font-weight: bold; }
+                                    .subtitle { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 5px; }
+                                    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+                                    .label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: bold; }
+                                    .value { font-size: 14px; font-weight: bold; margin-top: 2px; }
+                                    .section { margin-bottom: 30px; }
+                                    .section-title { font-size: 14px; text-transform: uppercase; color: #888; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
+                                    .section-body { font-size: 14px; }
+                                    .agreement { background: #f9f9f9; border-left: 4px solid #cc0000; padding: 15px; margin-top: 40px; font-style: italic; }
+                                    .sign-block { display: flex; justify-content: space-between; margin-top: 50px; }
+                                  </style>
+                                </head>
+                                <body onload="window.print();">
+                                  <div class="header">
+                                    <div class="title">A9 EDUCATION ACADEMY</div>
+                                    <div class="subtitle">Official Teacher Registration Application Form</div>
+                                  </div>
+                                  <div class="grid">
+                                    <div>
+                                      <div class="label">Applicant Name</div>
+                                      <div class="value">${app.name}</div>
+                                    </div>
+                                    <div>
+                                      <div class="label">Email Address</div>
+                                      <div class="value">${app.email}</div>
+                                    </div>
+                                    <div>
+                                      <div class="label">Phone Number</div>
+                                      <div class="value">${app.phone}</div>
+                                    </div>
+                                    <div>
+                                      <div class="label">Subject Field</div>
+                                      <div class="value">${app.subject}</div>
+                                    </div>
+                                    <div>
+                                      <div class="label">Grades Taught</div>
+                                      <div class="value">${app.grades || "N/A"}</div>
+                                    </div>
+                                    <div>
+                                      <div class="label">NIC Number</div>
+                                      <div class="value">${app.id_number}</div>
+                                    </div>
+                                  </div>
+                                  <div class="section">
+                                    <div class="section-title">Educational Qualifications</div>
+                                    <div class="section-body">${app.educational_qualifications}</div>
+                                  </div>
+                                  <div class="section">
+                                    <div class="section-title">About the Teacher</div>
+                                    <div class="section-body">${app.about}</div>
+                                  </div>
+                                  <div class="agreement">
+                                    <strong>PLATFORM POLICY AGREEMENT:</strong><br/>
+                                    "I hereby agree to register as a teacher under the A9 Education Online Platform and promise to pay 20% of the class fees collected from each student who joins my class to this platform."
+                                  </div>
+                                  <div class="sign-block">
+                                    <div>
+                                      <div class="label">Digital Signature</div>
+                                      <div class="value" style="font-family: Georgia, serif; font-style: italic;">${app.name}</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                      <div class="label">Verification Status</div>
+                                      <div class="value">${app.status.toUpperCase()}</div>
+                                    </div>
+                                  </div>
+                                </body>
+                              </html>
+                            `);
+                            printWindow.document.close();
+                          }
+                        }}
+                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all"
+                      >
+                        <Printer size={14} /> Print Detail
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expansion Card for Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                    
+                    {/* Qualification, About */}
+                    <div className="md:col-span-2 space-y-4">
+                      <div>
+                        <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Grades Taught</h5>
+                        <p className="text-sm font-bold text-gray-800 mt-0.5">{app.grades || "N/A"}</p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Educational Qualifications</h5>
+                        <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap leading-relaxed">{app.educational_qualifications}</p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wide">Biography & About</h5>
+                        <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap leading-relaxed">{app.about}</p>
+                      </div>
+
+                      {/* signed 20% pledge */}
+                      <div className="bg-red-50/50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                        <p className="text-[10px] font-bold text-red-800 uppercase tracking-wider mb-1">Contract Signed & Pledged</p>
+                        <p className="text-xs italic text-gray-700 leading-relaxed font-semibold">
+                          "I hereby agree to register as a teacher under the A9 Education Online Platform and promise to pay 20% of the class fees collected from each student who joins my class to this platform."
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-2">Signed Digitally as: <span className="font-bold text-gray-800 italic">{app.name}</span></p>
+                      </div>
+                    </div>
+
+                    {/* ID Card / Verification details */}
+                    <div className="space-y-4">
+                      <div>
+                        <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wide">NIC Number</h5>
+                        <p className="text-sm font-bold text-gray-800 mt-0.5">{app.id_number}</p>
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Uploaded NIC Photo</h5>
+                        {app.id_photo ? (
+                          <div className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white">
+                            <img
+                              src={`http://localhost:8000${app.id_photo}`}
+                              alt="NIC Identity Document"
+                              className="w-full h-40 object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <a
+                              href={`http://localhost:8000${app.id_photo}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold gap-1 transition-opacity"
+                            >
+                              <ExternalLink size={14} /> Open Full Size
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="p-6 bg-gray-100 rounded-xl text-center text-xs text-gray-400">
+                            No document photo uploaded
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Credentials Confirmation Modal */}
+      {credentialsModal?.show && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative">
+            <button
+              onClick={() => setCredentialsModal(null)}
+              className="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 p-2 rounded-full transition-all"
+            >
+              <X size={18} />
+            </button>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600 shadow-md">
+                <CheckCircle size={36} />
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">Teacher Account Created</h3>
+              <p className="text-gray-500 text-xs mt-2 px-2">
+                Teacher <strong>{credentialsModal.name}</strong> was registered successfully as a staff member.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 my-6 space-y-3 font-medium text-sm">
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="text-xs text-gray-400 uppercase tracking-wide">Registered Role</span>
+                <span className="text-xs font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full uppercase">Staff / Teacher</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Username:</span>
+                <span className="font-bold text-gray-800 select-all">{credentialsModal.username}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Password:</span>
+                <span className="font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded select-all">{credentialsModal.password}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Email:</span>
+                <span className="font-bold text-gray-800">{credentialsModal.email}</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 border border-blue-100 text-blue-800 rounded-2xl text-xs leading-relaxed flex items-start gap-2">
+              <ShieldAlert className="text-blue-600 shrink-0" size={16} />
+              <span>
+                An automated email containing these credentials has been sent to the teacher's email address (<strong>{credentialsModal.email}</strong>). They can now log in to the main dashboard.
+              </span>
+            </div>
+
+            <button
+              onClick={() => setCredentialsModal(null)}
+              className="w-full mt-6 py-3.5 bg-red-700 hover:bg-red-800 text-white font-bold rounded-xl transition-all shadow-lg text-sm active:scale-[0.98]"
+            >
+              Done & Close
+            </button>
+          </div>
+        </div>
+      )}
+    </AdminLayout>
+  );
+};
+
+export default AdminApplications;

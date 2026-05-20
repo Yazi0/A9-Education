@@ -1,49 +1,77 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { CheckCircle, Lock, Shield, BookOpen } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle, Lock, Shield, BookOpen, Loader2 } from "lucide-react";
 import StudentLayout from "../../layouts/StudentLayout";
+import axiosInstance from "../../api/axios";
+import { API_ENDPOINTS } from "../../api/endpoints";
 
 const Payment = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [subject, setSubject] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
 
-  // Mock subject data based on ID
-  const subject = {
-    id: parseInt(id || "2"),
-    name: "Science",
-    grade: "8",
-    teacher: "Mrs. Silva",
-    price: 1500,
-    description: "Explore physics, chemistry, and biology through experiments",
-    duration: "16 weeks",
-    nextBatch: "Jan 25, 2024"
+  useEffect(() => {
+    const fetchSubject = async () => {
+      try {
+        const response = await axiosInstance.get(API_ENDPOINTS.SUBJECTS.DETAIL(id!));
+        setSubject(response.data);
+      } catch (error) {
+        console.error("Failed to fetch subject", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSubject();
+  }, [id]);
+
+  const handlePayment = async () => {
+    setProcessing(true);
+    try {
+      const response = await axiosInstance.post(API_ENDPOINTS.PAYMENTS.CREATE_SESSION, {
+        subject_id: id
+      });
+      // Redirect to Stripe Checkout
+      window.location.href = response.data.url;
+    } catch (error) {
+      console.error("Payment failed", error);
+      alert("Failed to initiate payment. Please try again.");
+      setProcessing(false);
+    }
   };
 
-  const paymentMethods = [
-    { id: 1, name: "Credit/Debit Card", icon: "💳", description: "Visa, MasterCard, Amex" },
-    { id: 2, name: "Bank Transfer", icon: "🏦", description: "Direct bank payment" },
-    { id: 3, name: "Mobile Wallet", icon: "📱", description: "Dialog, Mobitel, Airtel" },
-    { id: 4, name: "Cash", icon: "💵", description: "Pay at our office" }
-  ];
+  if (loading) {
+    return (
+      <StudentLayout>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="animate-spin text-blue-600" size={48} />
+        </div>
+      </StudentLayout>
+    );
+  }
 
-  const handlePayment = () => {
-    // In real app, process payment here
-    alert(`Payment successful! You are now enrolled in ${subject.name}.`);
-    navigate("/student/my-subjects");
-  };
+  if (!subject) {
+    return (
+      <StudentLayout>
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-bold text-gray-800">Subject not found</h2>
+          <button onClick={() => navigate(-1)} className="mt-4 text-blue-600">Go Back</button>
+        </div>
+      </StudentLayout>
+    );
+  }
 
   return (
     <StudentLayout>
       <div className="max-w-6xl mx-auto flex-1 w-full">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Complete Enrollment</h1>
           <p className="text-gray-600 mt-2">Secure payment for your selected subject</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Subject Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Subject Summary */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-start mb-6">
                 <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl mr-4">
@@ -51,73 +79,47 @@ const Payment = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{subject.name} – Grade {subject.grade}</h2>
-                  <p className="text-gray-600 mt-1">Teacher: {subject.teacher}</p>
-                  <p className="text-gray-600 mt-2">{subject.description}</p>
+                  <p className="text-gray-600 mt-1">Teacher: {subject.teacher_name || "N/A"}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-blue-50 p-4 rounded-xl">
                   <p className="text-sm text-gray-500">Course Fee</p>
                   <p className="text-2xl font-bold text-gray-900">Rs. {subject.price}</p>
                 </div>
                 <div className="bg-green-50 p-4 rounded-xl">
                   <p className="text-sm text-gray-500">Duration</p>
-                  <p className="text-lg font-semibold text-gray-900">{subject.duration}</p>
-                </div>
-                <div className="bg-amber-50 p-4 rounded-xl">
-                  <p className="text-sm text-gray-500">Next Batch Starts</p>
-                  <p className="text-lg font-semibold text-gray-900">{subject.nextBatch}</p>
+                  <p className="text-lg font-semibold text-gray-900">{subject.duration || "Self-paced"}</p>
                 </div>
               </div>
             </div>
 
-            {/* Payment Methods */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Select Payment Method</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {paymentMethods.map((method) => (
-                  <label
-                    key={method.id}
-                    className="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all"
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      defaultChecked={method.id === 1}
-                      className="w-5 h-5 text-blue-600"
-                    />
-                    <div className="ml-4">
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-3">{method.icon}</span>
-                        <span className="font-semibold">{method.name}</span>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">{method.description}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Payment Method</h3>
+              <p className="text-gray-600 mb-6">You will be redirected to Stripe to securely complete your payment via Credit/Debit card.</p>
+              
+              <button
+                onClick={handlePayment}
+                disabled={processing}
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl font-bold shadow-lg transition-all flex items-center justify-center disabled:opacity-50"
+              >
+                {processing ? (
+                  <Loader2 className="animate-spin mr-2" size={20} />
+                ) : (
+                  <Lock className="mr-2" size={20} />
+                )}
+                {processing ? "Redirecting..." : `Pay Rs. ${subject.price} with Card`}
+              </button>
             </div>
 
-            {/* Payment Button */}
-            <button
-              onClick={handlePayment}
-              className="w-full py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
-            >
-              <Lock className="mr-2" size={20} />
-              Pay Rs. {subject.price} & Enroll Now
-            </button>
-
-            {/* Security Note */}
             <div className="flex items-center justify-center text-sm text-gray-500">
               <Shield className="mr-2" size={16} />
-              <span>Your payment is secured with SSL encryption</span>
+              <span>Payments are processed securely via Stripe (SSL Encrypted)</span>
             </div>
           </div>
 
-          {/* Right Column - Payment Summary */}
           <div className="space-y-6">
-            {/* Order Summary */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h3>
               <div className="space-y-4">
@@ -125,59 +127,22 @@ const Payment = () => {
                   <span className="text-gray-600">Course Fee</span>
                   <span className="font-medium">Rs. {subject.price}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Platform Fee</span>
-                  <span className="font-medium">Rs. 0</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">Rs. 0</span>
-                </div>
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
-                    <span>Total Amount</span>
+                    <span>Total</span>
                     <span>Rs. {subject.price}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Benefits */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
-              <h3 className="text-xl font-bold mb-4">What You Get</h3>
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg p-6 text-white text-sm">
+              <h3 className="text-lg font-bold mb-4">Course Benefits</h3>
               <ul className="space-y-3">
-                <li className="flex items-center">
-                  <CheckCircle className="mr-3" size={20} />
-                  <span>Full course access</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="mr-3" size={20} />
-                  <span>Interactive live classes</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="mr-3" size={20} />
-                  <span>Study materials & notes</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="mr-3" size={20} />
-                  <span>Teacher support</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="mr-3" size={20} />
-                  <span>Certificate of completion</span>
-                </li>
+                <li className="flex items-center"><CheckCircle className="mr-2" size={16} /> Lifetime access to content</li>
+                <li className="flex items-center"><CheckCircle className="mr-2" size={16} /> Interactive live sessions</li>
+                <li className="flex items-center"><CheckCircle className="mr-2" size={16} /> PDF Study materials</li>
               </ul>
-            </div>
-
-            {/* Need Help */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Contact our support team for assistance with payments or enrollment.
-              </p>
-              <button className="w-full py-2.5 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors">
-                Contact Support
-              </button>
             </div>
           </div>
         </div>
