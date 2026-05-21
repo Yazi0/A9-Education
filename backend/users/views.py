@@ -100,13 +100,14 @@ class TeacherApplicationInviteView(APIView):
         if not email:
             return Response({"error": "Email is required"}, status=400)
 
+        origin = request.headers.get('Origin') or 'https://a9-education.vercel.app'
         subject = "Invitation to Register as a Teacher on A9 Education"
         message = f"""Dear Teacher,
 
 You have been invited by the A9 Administration to register as a teacher on our online platform.
 
 Please click the link below to fill out the Teacher Application web form:
-http://localhost:5173/register/teacher/apply
+{origin}/register/teacher/apply
 
 Thank you,
 A9 Education Administration Team
