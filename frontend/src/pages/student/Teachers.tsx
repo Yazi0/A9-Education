@@ -43,7 +43,7 @@ const Teachers = () => {
   const filteredTeachers = teachers.filter(teacher => 
     teacher.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     teacher.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.subjects?.some((s: any) => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    teacher.subject?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

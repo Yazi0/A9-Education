@@ -130,7 +130,7 @@ const Teachers = () => {
 
                   <div className="flex items-center justify-center gap-1.5 text-gray-400 font-medium text-xs">
                     <BookOpen className="w-3.5 h-3.5 text-gray-300" />
-                    <span>Specialist in {teacher.grades}</span>
+                    <span>Specialist in {teacher.grades_detail?.map((g: any) => g.name).join(', ') || teacher.grades}</span>
                   </div>
                 </div>
 

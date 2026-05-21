@@ -20,6 +20,7 @@ import StudyMaterials from "../pages/student/StudyMaterials";
 import About from "../pages/About";
 import Contact from "../pages/Contact";
 import Teachers from "../pages/Teachers";
+import StudentTeachers from "../pages/student/Teachers";
 import Subject from "../pages/Subject";
 import AllMaterials from "../pages/student/AllMaterials";
 
@@ -49,6 +50,7 @@ const AppRoutes = () => {
 
         {/* Student Routes */}
         <Route path="/studentdashboard" element={<StudentDashboard />} />
+        <Route path="/student/teachers" element={<StudentTeachers />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/subjects" element={<Subjects />} />
         <Route path="/subject-content" element={<SubjectContent />} />
