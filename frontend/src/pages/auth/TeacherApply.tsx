@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   GraduationCap, ShieldCheck, Mail, Phone, BookOpen, 
-  Award, FileText, CheckCircle, Printer, ArrowLeft, Upload, Loader2 
+  Award, FileText, CheckCircle, Printer, ArrowLeft, Upload, Loader2, Plus, Check 
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "../../api/axios";
@@ -12,7 +12,6 @@ const TeacherApply: React.FC = () => {
     email: "",
     phone: "",
     subject: "",
-    grades: "",
     educational_qualifications: "",
     about: "",
     id_number: "",
@@ -28,6 +27,69 @@ const TeacherApply: React.FC = () => {
 
   const [teacherLevel, setTeacherLevel] = useState<"OL" | "AL">("OL");
   const [alStream, setAlStream] = useState<string>("Biology");
+
+  const [gradesList, setGradesList] = useState<{ id: number; name: string }[]>([]);
+  const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
+  const [customGrade, setCustomGrade] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  useEffect(() => {
+    const fetchGrades = async () => {
+      try {
+        const res = await api.get("users/grades/");
+        if (res.data && res.data.length > 0) {
+          setGradesList(res.data);
+        } else {
+          setGradesList([
+            { id: 6, name: "Grade 6" },
+            { id: 7, name: "Grade 7" },
+            { id: 8, name: "Grade 8" },
+            { id: 9, name: "Grade 9" },
+            { id: 10, name: "Grade 10" },
+            { id: 11, name: "Grade 11" },
+            { id: 12, name: "Grade 12" },
+            { id: 13, name: "Grade 13" },
+          ]);
+        }
+      } catch (err) {
+        console.error("Error loading grades:", err);
+        setGradesList([
+          { id: 6, name: "Grade 6" },
+          { id: 7, name: "Grade 7" },
+          { id: 8, name: "Grade 8" },
+          { id: 9, name: "Grade 9" },
+          { id: 10, name: "Grade 10" },
+          { id: 11, name: "Grade 11" },
+          { id: 12, name: "Grade 12" },
+          { id: 13, name: "Grade 13" },
+        ]);
+      }
+    };
+    fetchGrades();
+  }, []);
+
+  const toggleGrade = (gradeName: string) => {
+    if (selectedGrades.includes(gradeName)) {
+      setSelectedGrades(selectedGrades.filter(g => g !== gradeName));
+    } else {
+      setSelectedGrades([...selectedGrades, gradeName]);
+    }
+  };
+
+  const handleAddCustomGrade = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customGrade.trim()) {
+      const formatted = customGrade.trim();
+      if (!selectedGrades.includes(formatted)) {
+        setSelectedGrades([...selectedGrades, formatted]);
+      }
+      if (!gradesList.some(g => g.name.toLowerCase() === formatted.toLowerCase())) {
+        setGradesList([...gradesList, { id: Date.now(), name: formatted }]);
+      }
+      setCustomGrade("");
+      setShowCustomInput(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -55,6 +117,11 @@ const TeacherApply: React.FC = () => {
       return;
     }
 
+    if (selectedGrades.length === 0) {
+      setError("Please select at least one grade that you teach.");
+      return;
+    }
+
     if (!idPhoto) {
       setError("Please upload a photo of your ID / NIC.");
       return;
@@ -67,12 +134,14 @@ const TeacherApply: React.FC = () => {
       ? `O/L - ${formData.subject}`
       : `A/L ${alStream} - ${formData.subject}`;
 
+    const finalGrades = selectedGrades.join(", ");
+
     const data = new FormData();
     data.append("name", formData.name);
     data.append("email", formData.email);
     data.append("phone", formData.phone);
     data.append("subject", finalSubject);
-    data.append("grades", formData.grades);
+    data.append("grades", finalGrades);
     data.append("educational_qualifications", formData.educational_qualifications);
     data.append("about", formData.about);
     data.append("id_number", formData.id_number);
@@ -331,19 +400,74 @@ const TeacherApply: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
               Grades Taught <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              name="grades"
-              value={formData.grades}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:bg-white outline-none transition-all text-sm font-medium"
-              placeholder="e.g. Grade 10, Grade 11, Grade 12"
-              required
-            />
+            <div className="flex flex-wrap gap-2.5 p-4 bg-gray-50 rounded-2xl border border-gray-200/60">
+              {gradesList.map((g) => {
+                const isSelected = selectedGrades.includes(g.name);
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => toggleGrade(g.name)}
+                    className={`px-4 py-2 text-xs font-bold rounded-full border flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
+                      isSelected
+                        ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-200"
+                        : "bg-white border-gray-200 hover:border-gray-300 text-gray-700"
+                    }`}
+                  >
+                    {isSelected && <Check size={12} strokeWidth={3} />}
+                    {g.name}
+                  </button>
+                );
+              })}
+
+              {!showCustomInput ? (
+                <button
+                  type="button"
+                  onClick={() => setShowCustomInput(true)}
+                  className="px-4 py-2 text-xs font-bold rounded-full border border-dashed border-gray-300 hover:border-red-500 hover:text-red-600 text-gray-500 bg-white/50 flex items-center gap-1 transition-all active:scale-95"
+                >
+                  <Plus size={12} /> Add Grade
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={customGrade}
+                    onChange={(e) => setCustomGrade(e.target.value)}
+                    placeholder="e.g. Grade 5"
+                    className="px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-red-500 text-gray-800 font-bold"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddCustomGrade(e);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomGrade}
+                    className="px-3 py-1.5 text-xs bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomGrade("");
+                      setShowCustomInput(false);
+                    }}
+                    className="text-xs text-gray-400 hover:text-gray-600 font-bold px-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-gray-400">Select all the grades you teach. Click "Add Grade" to input a custom level.</p>
           </div>
 
           <div className="space-y-1">

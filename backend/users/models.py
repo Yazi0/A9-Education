@@ -42,6 +42,12 @@ class User(AbstractUser):
             self.student_id = f"STU/{dist}/{grade}/S{rand}"
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        if self.email:
+            from .models import TeacherApplication
+            TeacherApplication.objects.filter(email=self.email).delete()
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return self.username
 
@@ -72,7 +78,7 @@ class TeacherApplication(models.Model):
         ('rejected', 'Rejected'),
     )
     name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
+    email = models.EmailField()
     phone = models.CharField(max_length=20)
     subject = models.CharField(max_length=100)
     grades = models.CharField(max_length=200, blank=True, null=True)
