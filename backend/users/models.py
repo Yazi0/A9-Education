@@ -1,8 +1,22 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+def normalize_grade_name(name):
+    import re
+    if not name:
+        return name
+    match = re.search(r'\d+', str(name))
+    if match:
+        return f"Grade {match.group()}"
+    return str(name)
+
 class Grade(models.Model):
     name = models.CharField(max_length=50, unique=True)
+
+    def save(self, *args, **kwargs):
+        if self.name:
+            self.name = normalize_grade_name(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

@@ -178,9 +178,11 @@ class TeacherApplicationApproveView(APIView):
             )
             # Handle grades
             if app.grades:
+                from users.models import normalize_grade_name
                 grade_names = [g.strip() for g in app.grades.split(',') if g.strip()]
                 for g_name in grade_names:
-                    grade, _ = Grade.objects.get_or_create(name=g_name)
+                    normalized_name = normalize_grade_name(g_name)
+                    grade, _ = Grade.objects.get_or_create(name=normalized_name)
                     user.grades.add(grade)
             
             # Update application status

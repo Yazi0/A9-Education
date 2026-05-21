@@ -11,6 +11,7 @@ const AdminApplications: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState("");
   const [inviteError, setInviteError] = useState("");
@@ -61,6 +62,22 @@ const AdminApplications: React.FC = () => {
     } finally {
       setInviteLoading(false);
     }
+  };
+
+  const handleWhatsAppInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanPhone = invitePhone.replace(/\D/g, "");
+    if (!cleanPhone) {
+      alert("Please enter a valid phone number containing only digits.");
+      return;
+    }
+    
+    const applyUrl = `${window.location.origin}/register/teacher/apply`;
+    const message = `✨ *A9 EDUCATION ACADEMY* ✨\n\nDear Teacher,\n\nYou are invited to apply as a teacher on our online education platform. Please complete the application using the link below:\n\n🔗 *Apply Here:* ${applyUrl}\n\nWe look forward to working with you!\n\nBest regards,\nA9 Education Team`;
+    
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank");
+    setInvitePhone("");
   };
 
   const handleApprove = async (id: number, name: string, email: string) => {
@@ -121,35 +138,74 @@ const AdminApplications: React.FC = () => {
     <AdminLayout>
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* Invite Teacher Form */}
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="max-w-md">
-            <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-              <Mail className="text-red-600 animate-pulse" size={24} />
-              Invite Prospective Teacher
-            </h3>
-            <p className="text-gray-500 text-sm mt-1">
-              Send a secure email invitation containing the Teacher Application web form link.
-            </p>
+        {/* Invite Teacher Form Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Email Invitation */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+                <Mail className="text-red-600 animate-pulse" size={20} />
+                Email Invite
+              </h3>
+              <p className="text-gray-500 text-xs mt-1">
+                Send a secure email invitation containing the Teacher Application web form link.
+              </p>
+            </div>
+            <form onSubmit={handleInvite} className="flex gap-3 mt-2">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="teacher@example.com"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all text-xs font-medium"
+                required
+              />
+              <button
+                type="submit"
+                disabled={inviteLoading}
+                className="bg-red-700 hover:bg-red-800 text-white font-bold py-2.5 px-5 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 shrink-0"
+              >
+                {inviteLoading ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+                Send Invite
+              </button>
+            </form>
           </div>
-          <form onSubmit={handleInvite} className="flex-1 max-w-lg flex gap-3">
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="teacher@example.com"
-              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all text-sm font-medium"
-              required
-            />
-            <button
-              type="submit"
-              disabled={inviteLoading}
-              className="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-6 rounded-xl text-sm flex items-center gap-2 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 shrink-0"
-            >
-              {inviteLoading ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-              Send Invite
-            </button>
-          </form>
+
+          {/* WhatsApp Invitation */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-emerald-600 animate-bounce" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.457L0 24zm6.59-11.585c-.124-.246-.277-.258-.409-.263-.107-.005-.23-.005-.354-.005-.124 0-.326.046-.496.23-.17.184-.648.633-.648 1.545 0 .912.664 1.794.757 1.918.093.124 1.308 2.0 3.169 2.804 1.55.67 1.865.537 2.203.505.338-.032 1.092-.446 1.246-.877.154-.43.154-.8.107-.877-.046-.077-.17-.124-.354-.216-.185-.092-1.092-.538-1.262-.6-.17-.062-.292-.092-.416.092-.124.185-.477.6-.585.723-.107.123-.215.138-.4.046-.184-.092-.778-.287-1.482-.916-.547-.487-.916-1.09-1.023-1.275-.107-.185-.011-.285.08-.376.082-.08.185-.215.277-.323.092-.108.123-.184.185-.308.062-.123.03-.23-.015-.323-.047-.093-.416-1.002-.57-1.368z" />
+                </svg>
+                WhatsApp Invite
+              </h3>
+              <p className="text-gray-500 text-xs mt-1">
+                Open a pre-filled invitation on WhatsApp with the application link for mobile recruitment.
+              </p>
+            </div>
+            <form onSubmit={handleWhatsAppInvite} className="flex gap-3 mt-2">
+              <input
+                type="text"
+                value={invitePhone}
+                onChange={(e) => setInvitePhone(e.target.value)}
+                placeholder="e.g. 94771234567"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-xs font-medium"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-100 transition-all active:scale-[0.98] shrink-0"
+              >
+                <svg className="w-4 h-4 fill-current animate-bounce" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.457L0 24zm6.59-11.585c-.124-.246-.277-.258-.409-.263-.107-.005-.23-.005-.354-.005-.124 0-.326.046-.496.23-.17.184-.648.633-.648 1.545 0 .912.664 1.794.757 1.918.093.124 1.308 2.0 3.169 2.804 1.55.67 1.865.537 2.203.505.338-.032 1.092-.446 1.246-.877.154-.43.154-.8.107-.877-.046-.077-.17-.124-.354-.216-.185-.092-1.092-.538-1.262-.6-.17-.062-.292-.092-.416.092-.124.185-.477.6-.585.723-.107.123-.215.138-.4.046-.184-.092-.778-.287-1.482-.916-.547-.487-.916-1.09-1.023-1.275-.107-.185-.011-.285.08-.376.082-.08.185-.215.277-.323.092-.108.123-.184.185-.308.062-.123.03-.23-.015-.323-.047-.093-.416-1.002-.57-1.368z" />
+                </svg>
+                Send Invite
+              </button>
+            </form>
+          </div>
+
         </div>
 
         {inviteSuccess && (

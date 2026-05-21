@@ -17,8 +17,12 @@ class GradeRelatedField(serializers.PrimaryKeyRelatedField):
         except Exception as e:
             if isinstance(data, (str, int)):
                 name_str = str(data).strip()
+                if name_str.isdigit():
+                    raise e
                 if name_str:
-                    grade, created = Grade.objects.get_or_create(name=name_str)
+                    from users.models import normalize_grade_name
+                    normalized_name = normalize_grade_name(name_str)
+                    grade, created = Grade.objects.get_or_create(name=normalized_name)
                     return grade
             raise e
 
