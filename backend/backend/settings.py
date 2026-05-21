@@ -157,4 +157,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'yasiru01nimsara@gmail.com'
 EMAIL_HOST_PASSWORD = 'lrwf qpoe nuao emad'
 DEFAULT_FROM_EMAIL = 'yasiru01nimsara@gmail.com'
+EMAIL_TIMEOUT = 5
 
